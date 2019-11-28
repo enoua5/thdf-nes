@@ -137,7 +137,7 @@ Reset:
     STA ppu_ctrl
     STA $2000
     
-    LDA #%00011000 ; enable sprites, enable background
+    LDA #%01011000 ; enable sprites, enable background
     STA ppu_mask
     STA $2001
     
