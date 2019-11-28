@@ -1,0 +1,5 @@
+.incsrc "src/play/stat_readout.6502"
+
+play_code:
+    JSR update_stat_readout
+  RTS

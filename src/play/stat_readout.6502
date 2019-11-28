@@ -1,0 +1,113 @@
+STAT_READOUT_NT .equ #$23
+STAT_READOUT_HP .equ #$04
+STAT_READOUT_HPMAX .equ #$0A
+STAT_READOUT_MANA .equ #$10
+STAT_READOUT_MANAMAX .equ #$16
+STAT_READOUT_FLOOR .equ #$1C
+STAT_READOUT_STR .equ #$44
+STAT_READOUT_AGL .equ #$4A
+STAT_READOUT_DEF .equ #$50
+STAT_READOUT_MNY .equ #$56
+STAT_READOUT_JWL .equ #$5C
+
+update_stat_readout:
+  LDA readout_update_req
+  BEQ +
+    JSR write_stats_to_readout
+  +:
+  RTS
+write_stats_to_readout:
+  LDA player+ACT_HP
+  STA byte_to_dec_in
+  JSR byte_to_dec
+  begin_nt_buffer_write STAT_READOUT_NT, STAT_READOUT_HP
+  write_to_nt_buffer byte_to_dec_out+0
+  write_to_nt_buffer byte_to_dec_out+1
+  write_to_nt_buffer byte_to_dec_out+2
+  end_nt_buffer_write
+
+  LDA player+ACT_HPMAX
+  STA byte_to_dec_in
+  JSR byte_to_dec
+  begin_nt_buffer_write STAT_READOUT_NT, STAT_READOUT_HPMAX
+  write_to_nt_buffer byte_to_dec_out+0
+  write_to_nt_buffer byte_to_dec_out+1
+  write_to_nt_buffer byte_to_dec_out+2
+  end_nt_buffer_write
+
+  LDA player+ACT_MANA
+  STA byte_to_dec_in
+  JSR byte_to_dec
+  begin_nt_buffer_write STAT_READOUT_NT, STAT_READOUT_MANA
+  write_to_nt_buffer byte_to_dec_out+0
+  write_to_nt_buffer byte_to_dec_out+1
+  write_to_nt_buffer byte_to_dec_out+2
+  end_nt_buffer_write
+
+  LDA player+ACT_MANAMAX
+  STA byte_to_dec_in
+  JSR byte_to_dec
+  begin_nt_buffer_write STAT_READOUT_NT, STAT_READOUT_MANAMAX
+  write_to_nt_buffer byte_to_dec_out+0
+  write_to_nt_buffer byte_to_dec_out+1
+  write_to_nt_buffer byte_to_dec_out+2
+  end_nt_buffer_write
+
+  LDA player+ACT_STR
+  STA byte_to_dec_in
+  JSR byte_to_dec
+  begin_nt_buffer_write STAT_READOUT_NT, STAT_READOUT_STR
+  write_to_nt_buffer byte_to_dec_out+0
+  write_to_nt_buffer byte_to_dec_out+1
+  write_to_nt_buffer byte_to_dec_out+2
+  end_nt_buffer_write
+
+  LDA player+ACT_AGL
+  STA byte_to_dec_in
+  JSR byte_to_dec
+  begin_nt_buffer_write STAT_READOUT_NT, STAT_READOUT_AGL
+  write_to_nt_buffer byte_to_dec_out+0
+  write_to_nt_buffer byte_to_dec_out+1
+  write_to_nt_buffer byte_to_dec_out+2
+  end_nt_buffer_write
+
+  LDA player+ACT_DEF
+  STA byte_to_dec_in
+  JSR byte_to_dec
+  begin_nt_buffer_write STAT_READOUT_NT, STAT_READOUT_DEF
+  write_to_nt_buffer byte_to_dec_out+0
+  write_to_nt_buffer byte_to_dec_out+1
+  write_to_nt_buffer byte_to_dec_out+2
+  end_nt_buffer_write
+
+  LDA player_floor
+  STA byte_to_dec_in
+  JSR byte_to_dec
+  begin_nt_buffer_write STAT_READOUT_NT, STAT_READOUT_FLOOR
+  write_to_nt_buffer byte_to_dec_out+0
+  write_to_nt_buffer byte_to_dec_out+1
+  write_to_nt_buffer byte_to_dec_out+2
+  end_nt_buffer_write
+
+  LDA player_money
+  STA byte_to_dec_in
+  JSR byte_to_dec
+  begin_nt_buffer_write STAT_READOUT_NT, STAT_READOUT_MNY
+  write_to_nt_buffer byte_to_dec_out+0
+  write_to_nt_buffer byte_to_dec_out+1
+  write_to_nt_buffer byte_to_dec_out+2
+  end_nt_buffer_write
+
+  LDA player_jewels
+  STA byte_to_dec_in
+  JSR byte_to_dec
+  begin_nt_buffer_write STAT_READOUT_NT, STAT_READOUT_JWL
+  write_to_nt_buffer byte_to_dec_out+0
+  write_to_nt_buffer byte_to_dec_out+1
+  write_to_nt_buffer byte_to_dec_out+2
+  end_nt_buffer_write
+
+  LDA #0
+  STA readout_update_req
+  
+  RTS

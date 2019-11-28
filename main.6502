@@ -1,0 +1,280 @@
+;PXZKPG
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+; constants
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+PRG_COUNT = 1
+
+MODE_TITLE = 0
+MODE_CHAR_CREATE = 1
+MODE_PLAY = 2
+MODE_DEATH = 3
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+; vars
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+  .enum $0000 ; engine vars
+    waiting_for_frame .dsb 1
+    ppu_mask .dsb 1
+    ppu_ctrl .dsb 1
+    nt_update_buf_wi .dsb 1
+    nt_update_buf_wc .dsb 1
+    nt_buffer_overflow .dsb 1
+    game_mode .dsb 1
+    rng_seed .dsb 2
+    buttons .dsb 1
+    button_ondown .dsb 1
+    generic_pointer .dsb 2  
+    draw_req .dsb 1
+    register_backup .dsb 3
+    byte_to_dec_in .dsb 1
+    byte_to_dec_out .dsb 3
+  .ende
+  
+  .enum $0300
+    nt_buffer .dsb 256
+  .ende
+  
+  .enum $0400
+    dungeon_map .dsb 256
+  .ende
+  
+  .enum $0500 ; character creation vars
+    cc_points_spent .dsb 1
+    cc_cursor_x .dsb 1
+    cc_cursor_y .dsb 1
+    
+    ;terrible code *requires* you do not reorder this block
+    cc_hp_sel .dsb 1
+    cc_mp_sel .dsb 1
+    cc_str_sel .dsb 1
+    cc_atk_sel .dsb 1
+    cc_def_sel .dsb 1
+    
+    cc_cursor_flash_timer .dsb 1
+    
+    dun_gen .dsb 1 ; 0=not generated, 1=gen in process, 2=gen complete
+    gen_working_room .dsb 1
+  .ende
+  
+  .enum $0600 ; playtime vars
+    boss_room .dsb 1
+    player_room .dsb 1
+    player_floor .dsb 1
+    player_money .dsb 1
+    player_jewels .dsb 1
+    enemies_in_room .dsb 1
+    .incsrc "src/actor_vars.6502"
+    
+    readout_update_req .dsb 1
+  .ende
+  
+  .enum $0700
+    debug_counter .dsb 255
+  .ende
+  
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+; ines header
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+  .db "NES", $1a ;id
+  .db PRG_COUNT ;16k prg pages
+  .db $01 ;8k chr pages
+  .db $01 ;mirror
+  .dsb 9, $00
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+; prg-rom
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+  .base $10000-(PRG_COUNT*$4000)
+  
+  .incsrc "src/macros.6502"
+  
+Reset:
+  SEI         ; disable IRQs
+  CLD         ; disable decimal mode
+  LDX #$40
+  STX $4017   ; disable APU frame IRQ
+  LDX #$FF
+  TXS         ; Set up stack
+  INX         ; now X = 0
+  STX $2000   ; disable NMI
+  STX $2001   ; disable rendering
+  STX $4010   ; disable DMC IRQs
+  
+  @vblankwait1:  ; First wait for vblank to make sure PPU is ready
+    BIT $2002
+    BPL @vblankwait1
+    
+  @clrmem:
+    LDA #$00
+    STA $0000, x
+    STA $0100, x
+    STA $0300, x
+    STA $0400, x
+    STA $0500, x
+    STA $0600, x
+    STA $0700, x
+    LDA #$FE
+    STA $0200, x
+    INX
+    BNE @clrmem
+
+  @vblankwait2:  ; Second wait for vblank, PPU is ready after this
+    BIT $2002
+    BPL @vblankwait2
+    
+  init:
+    load_pal colorpal1
+    
+    LDA #1
+    STA draw_req
+    ;load_nametable 0, room_name
+    
+    LDA #%10001000 ;enable NMI, sprites from Pattern 1, background from Pattern 0
+    STA ppu_ctrl
+    STA $2000
+    
+    LDA #%00011000 ; enable sprites, enable background
+    STA ppu_mask
+    STA $2001
+    
+    ;rng_seed can't be 0
+    LDA #$42
+    STA rng_seed+0
+  main:
+    .incsrc "src/controller.6502"
+    ; tick forward prng and xor with controller every frame for more entropy
+    JSR rng
+    EOR buttons ;rng returned low byte into A
+    STA rng_seed+0
+    
+    STA byte_to_dec_in
+    JSR byte_to_dec
+    
+    LDA game_mode
+    
+    CMP #0
+    BEQ +
+    CMP #1
+    BEQ ++
+    CMP #2
+    BEQ +++
+    CMP #3
+    BEQ ++++
+    
+    +:
+      JSR title_code
+      JMP end_main
+    ++:
+      JSR cc_code
+      JMP end_main
+    +++:
+      JSR play_code
+      JMP end_main
+    ++++:
+      JMP end_main
+    
+    end_main:
+      LDA #1
+      STA waiting_for_frame
+      
+      -:
+        LDA waiting_for_frame
+        CMP #0
+      BNE -
+      
+      JMP main
+
+NMI:
+  PHP
+  STA register_backup
+  STX register_backup+1
+  STY register_backup+2
+  
+  LDA #0
+  STA $2001
+
+  LDA draw_req
+  
+  CMP #1
+  BNE +
+    load_nametable 0, titlescreen_name
+    LDA #0
+    STA draw_req
+  +:
+  CMP #2
+  BNE +
+    load_nametable 1, char_create_name
+    LDA #0
+    STA draw_req
+  +:
+  CMP #3
+  BNE +
+    load_nametable 0, room_name
+    LDA #0
+    STA draw_req
+  +:
+  
+  JSR pull_nt_buffer
+  
+  .incsrc "src/reset_scroll.6502"
+  
+  LDA ppu_mask
+  STA $2001
+  
+  LDA #0
+  STA waiting_for_frame
+  
+  LDA register_backup
+  LDX register_backup+1
+  LDY register_backup+2
+  PLP
+  RTI
+
+  
+IRQ:
+  RTI
+  
+  .incsrc "src/utils.6502"
+  .incsrc "src/title_code.6502"
+  .incsrc "src/cc_code.6502"
+  .incsrc "src/generator.6502"
+  .incsrc "src/play_code.6502"
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+; data
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+  .org $E000
+colorpal1:
+  .incbin "dat/pal.dat"
+titlescreen_name:
+  .incbin "dat/title.nam"
+char_create_name:
+  .incbin "dat/char_create.nam"
+room_name:
+  .incbin "dat/room.nam"
+  
+cc_stat_options:
+  .incbin "dat/player_stat.dat"
+enemy_starting_stats:
+  .incbin "dat/enemy_stat.dat"
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+; interupt vectors
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+  .org $fffa
+
+  .dw NMI
+  .dw Reset
+  .dw IRQ
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+; chr-rom
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+  .incbin "dat/sprites.chr"

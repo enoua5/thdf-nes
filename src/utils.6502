@@ -1,0 +1,85 @@
+rng: ;loads A and X
+  LDX #8
+  LDA rng_seed+0
+--:
+  ASL
+  ROL rng_seed+1
+  BCC +
+  EOR #$2D
++:
+  DEX
+  BNE --
+  STA rng_seed+0
+  CMP #0
+  RTS
+
+pull_nt_buffer:
+  LDX #$00 ;buffer pointer
+  LDY #$00 ;entry length counter
+  -:
+    CPX nt_update_buf_wi
+    BEQ finish_nt_update:
+    CPY #$00
+    BNE +
+      ;we are at the start of a new entry
+      LDY nt_buffer, X
+      INX
+      
+      LDA $2002 ; read PPU status to reset the high/low latch
+      
+      LDA nt_buffer, X
+      STA $2006 ; write the high byte of address
+      INX
+      DEY
+      
+      LDA nt_buffer, X
+      STA $2006 ; write the low byte of address
+      INX
+      DEY
+    +:
+      LDA nt_buffer, X
+      STA $2007 ; write to ppu
+      INX
+      DEY
+      JMP -
+      
+  finish_nt_update:
+  
+  LDA #0
+  STA nt_buffer_overflow
+  STA nt_update_buf_wi
+  STA nt_update_buf_wc
+  
+  RTS
+  
+byte_to_dec:
+  LDA byte_to_dec_in
+  
+  ;100's place
+  LDX #0
+  -:
+    CMP #100
+    BCC +
+      INX
+      ;SEC
+      SBC #100
+    JMP -
+  +:
+  STX byte_to_dec_out+0
+  
+  ;10's place
+  LDX #0
+  -:
+    CMP #10
+    BCC +
+      INX
+      ;SEC
+      SBC #10
+    JMP -
+  +:
+  STX byte_to_dec_out+1
+  
+  ;1's place
+  STA byte_to_dec_out+2
+  
+  RTS

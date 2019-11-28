@@ -1,0 +1,223 @@
+cc_code:
+  ;(this has been moved to after character creation in order to provide more entropy)
+  ;if gen not in progress, set it going
+  ;LDA dun_gen
+  ;CMP #0
+  ;BNE +cc1
+    ;JSR gen_dungeon
+    ;LDA #3
+    ;STA draw_req
+  ;+cc1:
+
+  JSR cc_move_cursor
+  JSR cc_draw_screen
+  
+  
+  check_ondown START_BUTTON
+  BEQ +
+    JSR fill_stats
+    LDA #2
+    STA game_mode
+    JSR gen_dungeon
+    LDA #3
+    STA draw_req
+  +:
+  RTS
+
+set_generic_pointer_to_cursor_position:
+  ;find high byte
+  LDX #$24
+  
+  LDA cc_cursor_y
+  BEQ +
+    INX ;high byte is 24 for y=0, 25 otherwise
+  +:
+  
+  STX generic_pointer+0
+  
+  ;find low byte
+  
+  LDA #$C9
+  LDX cc_cursor_y
+  -:
+    CPX #0
+    BEQ +
+    
+    CLC
+    ADC #$40 ; each row is +$40 further than the last
+    DEX
+    JMP -
+  +:
+  
+  LDX cc_cursor_x
+  -:
+    CPX #0
+    BEQ +
+    
+    CLC
+    ADC #$05 ; each column is 5 further than the last
+    DEX
+    JMP -
+  +:
+  
+  STA generic_pointer+1
+  
+  RTS
+
+cc_move_cursor:
+  ;flash cursor
+  INC cc_cursor_flash_timer
+  LDA cc_cursor_flash_timer
+  AND #%00100000
+  STA debug_counter
+  ;check buttons and move
+  ;NOTE: make sure to set cursor to visible before move
+  check_ondown UP_BUTTON
+  BEQ +
+    ;unclear current cursor
+    JSR set_generic_pointer_to_cursor_position
+    begin_nt_buffer_write generic_pointer+0, generic_pointer+1
+    write_to_nt_buffer #$35
+    end_nt_buffer_write
+    
+    DEC cc_cursor_y
+    ;when y changes, we need to move to the new x
+    LDX cc_cursor_y
+    LDA cc_hp_sel, X
+    STA cc_cursor_x
+  +:
+  check_ondown DOWN_BUTTON
+  BEQ +
+    ;unclear current cursor
+    JSR set_generic_pointer_to_cursor_position
+    begin_nt_buffer_write generic_pointer+0, generic_pointer+1
+    write_to_nt_buffer #$35
+    end_nt_buffer_write
+    
+    INC cc_cursor_y
+    ;when y changes, we need to move to the new x
+    LDX cc_cursor_y
+    LDA cc_hp_sel, X
+    STA cc_cursor_x
+  +:
+  check_ondown LEFT_BUTTON
+  BEQ +
+    ;clear current cursor
+    JSR set_generic_pointer_to_cursor_position
+    begin_nt_buffer_write generic_pointer+0, generic_pointer+1
+    write_to_nt_buffer #$24
+    end_nt_buffer_write
+    
+    DEC cc_cursor_x
+  +:
+  check_ondown RIGHT_BUTTON
+  BEQ +
+    ;clear current cursor
+    JSR set_generic_pointer_to_cursor_position
+    begin_nt_buffer_write generic_pointer+0, generic_pointer+1
+    write_to_nt_buffer #$24
+    end_nt_buffer_write
+    
+    INC cc_cursor_x
+  +:
+  ;re-adjust cursor so it doesn't go over
+  LDA cc_cursor_x
+  CMP #$ff
+  BNE +
+    LDX #0
+    STX cc_cursor_x
+  +:
+  CMP #$04
+  BNE +
+    LDX #$03
+    STX cc_cursor_x
+  +:
+  LDA cc_cursor_y
+  CMP #$ff
+  BNE +
+    LDX #$04
+    STX cc_cursor_y
+    ;when y changes, we need to move to the new x
+    LDX cc_cursor_y
+    LDY cc_hp_sel, X
+    STY cc_cursor_x
+  +:
+  CMP #$05
+  BNE +
+    LDX #$00
+    STX cc_cursor_y
+    ;when y changes, we need to move to the new x
+    LDX cc_cursor_y
+    LDY cc_hp_sel, X
+    STY cc_cursor_x
+  +:
+  
+  ;update selections
+  --:
+  LDX cc_cursor_y
+  LDA cc_cursor_x
+  STA cc_hp_sel, X ; this is bad code and I don't care.
+  
+  ;recalc points spent
+  LDA #0
+  LDY #0
+  -:
+    CLC
+    ADC cc_hp_sel, Y
+    LDX cc_hp_sel, Y
+    CPX #3
+    BNE +
+      CLC
+      ADC #$01 ; highest upgrade costs an extra point
+    +:
+  INY
+  CPY #5
+  BNE -
+  STA cc_points_spent
+  
+  
+  ;;if too many points are spent, move current cursor back
+  CMP #6
+  BMI +
+    DEC cc_cursor_x
+    JMP --
+  +:
+  
+  ;draw current cursor
+  JSR set_generic_pointer_to_cursor_position
+  begin_nt_buffer_write generic_pointer+0, generic_pointer+1
+  LDA cc_cursor_flash_timer
+  AND #%00110000
+  BEQ +
+    write_to_nt_buffer #$35
+    JMP ++
+  +:
+    write_to_nt_buffer #$24
+  ++:
+  end_nt_buffer_write
+  
+  RTS
+
+cc_draw_screen:
+  begin_nt_buffer_write #$26, #$08
+  write_to_nt_buffer cc_points_spent
+  end_nt_buffer_write
+  RTS
+  
+fill_stats:
+  fill_ind_stats player, cc_hp_sel
+  fill_ind_stats warrior, enemy_starting_stats
+  fill_ind_stats theif, enemy_starting_stats+5
+  fill_ind_stats mage, enemy_starting_stats+10
+  fill_ind_stats tank, enemy_starting_stats+15
+  fill_ind_stats dragon, enemy_starting_stats+20
+  ;set player's hp and mana to max
+  LDA player+ACT_HPMAX
+  STA player+ACT_HP
+  LDA player+ACT_MANAMAX
+  STA player+ACT_MANA
+  
+  LDA #1
+  STA readout_update_req
+  
+  RTS

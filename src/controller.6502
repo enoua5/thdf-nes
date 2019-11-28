@@ -1,0 +1,28 @@
+  A_BUTTON      .equ #%10000000
+  B_BUTTON      .equ #%01000000
+  SELECT_BUTTON .equ #%00100000
+  START_BUTTON  .equ #%00010000
+  UP_BUTTON     .equ #%00001000
+  DOWN_BUTTON   .equ #%00000100
+  LEFT_BUTTON   .equ #%00000010
+  RIGHT_BUTTON  .equ #%00000001
+
+  LDA buttons
+  STA button_ondown ; using to hold buttons last frame for now
+
+  ;latch controller
+  LDA #$01
+  STA $4016
+  STA buttons
+  LSR a ;a=0
+  STA $4016
+  @readpad:
+    LDA $4016
+    LSR a ; b0 -> carry
+    ROL buttons ; carry -> b0 
+    bcc @readpad
+  
+  LDA button_ondown
+  EOR buttons ;detect edges from this frame to last
+  AND buttons ;if they're down now, it was a down edge
+  STA button_ondown

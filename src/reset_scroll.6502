@@ -1,0 +1,25 @@
+  LDA #%11111110 ;turn off last bit of ppu_ctrl
+  AND ppu_ctrl
+  STA ppu_ctrl
+
+  LDA #$01
+  AND game_mode ;we move back and forth between the two screens
+                ;every time we switch modes
+  CMP #$01
+  
+  ;LDA with 0 or one depending on eveness of gamemode
+  BNE +
+    LDA #$01
+    JMP ++
+  +:
+    LDA #$00
+  ++:
+  
+  ORA ppu_ctrl ;write the correct scroll to the ppu_ctrl
+  STA ppu_ctrl
+  STA $2000
+  
+  ;yay hardware glitches...
+  LDA #$00
+  STA $2005
+  STA $2005

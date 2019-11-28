@@ -1,0 +1,11 @@
+title_code:
+  check_ondown START_BUTTON
+  BEQ +
+  
+    LDA #1
+    STA game_mode
+    LDA #2
+    STA draw_req
+  +:
+  
+  RTS

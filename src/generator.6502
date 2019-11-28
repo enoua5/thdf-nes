@@ -1,0 +1,166 @@
+setup_gen_dun:
+  LDA #1
+  STA dun_gen
+  
+  ;clear dungeon of last generation
+  LDA #0
+  LDX #0
+  -:
+    STA dungeon_map, x
+    INX
+    CPX #0
+  ;BNE -
+  
+  LDY #0 ; counter for how many rooms to fill in
+  JSR rng ; rng loads X. Be Careful.
+  STA gen_working_room
+  RTS
+gen_room_feats:
+  LDA #%00000001
+  STA dungeon_map, x ; x is still loaded
+  
+  JSR rng ;generate enemies
+  AND #%11110000
+  LDX gen_working_room
+  ORA dungeon_map, x 
+  STA dungeon_map, x
+  
+  ;fountain
+  JSR rng
+  AND #%00001111
+  CMP #0
+  BNE +
+    LDX gen_working_room
+    LDA dungeon_map, x
+    ORA #%00001000
+    STA dungeon_map, x
+  +:
+  ;ghost
+  JSR rng
+  AND #%00000011
+  CMP #0
+  BNE +
+    LDX gen_working_room
+    LDA dungeon_map, x
+    ORA #%00000100
+    STA dungeon_map, x
+  +:
+  ;treasure
+  JSR rng
+  AND #%00000111
+  CMP #0
+  BNE +
+    LDX gen_working_room
+    LDA dungeon_map, x
+    ORA #%00000010
+    STA dungeon_map, x
+  +:
+  RTS
+gen_pick_next_room:      ;pick next room
+  JSR rng
+  AND #%00000011
+  
+  CMP #0 ;up
+  BNE +
+    LDA gen_working_room
+    AND #%11110000 ;we have to make sure the move is valid
+    CMP #%11110000
+    BEQ end_move
+    
+    LDA gen_working_room
+    ADC #$10
+    STA gen_working_room
+    
+    LDA #0
+    CMP #0
+    BEQ end_move
+  +:
+  CMP #1 ;down
+  BNE +
+    LDA gen_working_room
+    AND #%11110000 ;we have to make sure the move is valid
+    CMP #%00000000
+    BEQ end_move
+    
+    LDA gen_working_room
+    SBC #$10
+    STA gen_working_room
+    
+    LDA #0
+    CMP #0
+    BEQ end_move
+  +:
+  CMP #2 ;left
+  BNE +
+    LDA gen_working_room
+    AND #%00001111 ;we have to make sure the move is valid
+    CMP #%00000000
+    BEQ end_move
+    
+    LDA gen_working_room
+    SBC #$01
+    STA gen_working_room
+    
+    LDA #0
+    CMP #0
+    BEQ end_move
+  +:
+  CMP #3 ;right
+  BNE +
+    LDA gen_working_room
+    AND #%00001111 ;we have to make sure the move is valid
+    CMP #%00001111
+    BEQ end_move
+    
+    LDA gen_working_room
+    ADC #$01
+    STA gen_working_room
+    
+    LDA #0
+    CMP #0
+    BEQ end_move
+  +:
+  end_move:
+  RTS
+gen_dungeon:
+  ; bits per room:
+  ; 76543210
+  ; |||||||+-is there a room here?
+  ; ||||||+-treasure chest?
+  ; |||||+-ghost?
+  ; ||||+-fountain?
+  ; |||+-warrior?
+  ; ||+-theif?
+  ; |+-mage?
+  ; +-tank?
+  JSR setup_gen_dun
+  next_room:
+    ;check to see if room is already filled
+    LDX gen_working_room
+    LDA dungeon_map, x
+    AND #%00000001
+    CMP #1
+    BEQ + ;skip making the room if it's aleady made
+      JSR gen_room_feats
+    +:
+      JSR gen_pick_next_room
+    INY
+    CPY #0
+  BNE next_room
+  
+  choose_random_room
+  STX player_room
+  LDA #%00000001
+  STA dungeon_map, X
+  
+  -:
+    choose_random_room
+    CPX player_room
+  BEQ -
+  STX boss_room
+  LDA #%00000001
+  STA dungeon_map, X
+  
+  LDA #2
+  STA dun_gen
+  RTS

@@ -1,0 +1,180 @@
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+; UTILS
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+MACRO load_pal pal_address
+  ;load color pal
+  LDA $2002 ; reset the hight/low latch to high
+  LDA #$3F
+  STA $2006 ; write high byte
+  LDA #$00
+  STA $2006 ; PPU is now looking at $3F10; the color palette data
+    
+  LDX #$00
+  -:
+    LDA pal_address, x
+    STA $2007
+    INX
+    CPX #$20
+    BNE -
+ENDM
+
+MACRO load_nametable nt_number, nt_pointer
+  ;load nametable
+  LDA $2002             ; read PPU status to reset the high/low latch
+  LDA #$20+(nt_number*$04)
+  STA $2006             ; write the high byte of address
+  LDA #$00
+  STA $2006             ; write the low byte of address
+  
+  LDA #<nt_pointer
+  STA generic_pointer+0
+  LDA #>nt_pointer
+  STA generic_pointer+1
+  
+  LDY #$00 ; counter for the loop
+  LDX #$04 ; 4*256 = 1k, how much data we copy
+  -:
+    LDA (generic_pointer), y
+    STA $2007             ; write to PPU
+    INY
+    BNE -
+    INC generic_pointer+1
+    DEX
+    BNE -
+ENDM
+
+MACRO veryify_nmi_safe
+  ;backup registers, so we can restore them
+  PHP
+  STA register_backup
+  STX register_backup+1
+  STY register_backup+2
+  ;check the flag
+  LDA proc_frame
+  CMP #0
+  BEQ +
+    ;restore registers and return from interupt
+    LDA register_backup
+    LDX register_backup+1
+    LDY register_backup+2
+    PLP
+    RTI
+  +: ;we're safe to proceed
+  PLP
+ENDM
+
+MACRO check_ondown button_id
+  LDA button_ondown
+  AND button_id
+ENDM
+
+MACRO begin_nt_buffer_write loc_high, loc_low
+  ;if they previous entry is unfinished, finish it
+  LDA nt_update_buf_wi
+  CMP nt_update_buf_wc
+  BEQ +
+    end_nt_buffer_write
+  +:
+
+  LDA nt_update_buf_wi
+  CMP #$fb ;minumum space needed for a new entry
+  BCC +
+    LDA #1
+    STA nt_buffer_overflow
+  +:
+  
+  LDA nt_buffer_overflow
+  BNE +
+  
+  LDX nt_update_buf_wi
+  LDA #$00 ;value will be updated when end_nt_buffer_write is called
+  STA nt_buffer, X
+  
+  INX
+  LDA loc_high
+  STA nt_buffer, X
+  
+  INX
+  LDA loc_low
+  STA nt_buffer, X
+  
+  INX
+  STX nt_update_buf_wc
+  
+  +:
+ENDM
+
+MACRO write_to_nt_buffer byte
+  LDA nt_buffer_overflow
+  BNE +
+  
+  LDA byte
+  LDX nt_update_buf_wc
+  STA nt_buffer, X
+  INC nt_update_buf_wc
+  
+  ;buffer overflow check
+  LDA nt_update_buf_wc
+  CMP #$FE
+  BNE +
+    LDA #1
+    STA nt_buffer_overflow
+    end_nt_buffer_write
+  +:
+ENDM
+
+MACRO end_nt_buffer_write
+  ;find and write data lentgh
+  LDA nt_update_buf_wc
+  SBC nt_update_buf_wi
+  LDX nt_update_buf_wi
+  STA nt_buffer, X
+  ;update `write initial` using `write current`
+  LDX nt_update_buf_wc
+  STX nt_update_buf_wi
+ENDM
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+; GENERATOR
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+MACRO choose_random_room
+  -:
+    JSR rng
+    LDX rng_seed
+    LDA dungeon_map, X
+  BEQ - ; if room is empty, try again
+ENDM
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+; CHARACTER CREATION
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+MACRO fill_ind_stats dest, source
+  LDX #$00
+  
+  LDY source, X
+  LDA cc_stat_options, Y
+  STA dest, X
+  INX
+  
+  LDY source, X
+  LDA cc_stat_options+4, Y
+  STA dest, X
+  INX
+  
+  LDY source, X
+  LDA cc_stat_options+8, Y
+  STA dest, X
+  INX
+  
+  LDY source, X
+  LDA cc_stat_options+12, Y
+  STA dest, X
+  INX
+  
+  LDY source, X
+  LDA cc_stat_options+16, Y
+  STA dest, X
+ENDM
