@@ -68,10 +68,11 @@ MODE_DEATH = 3
     .incsrc "src/actor_vars.6502"
     
     readout_update_req .dsb 1
+    room_update_req .dsb 1
   .ende
   
   .enum $0700
-    debug_counter .dsb 255
+    generic_bytes .dsb 255
   .ende
   
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
