@@ -1,14 +1,19 @@
 SCREEN_TOP .equ #$20
 WALL_TOP_L1 .equ #$0E
+SPIRIT_L1 .equ #$9A
 
 SCREEN_MID .equ #$21
 WALL_LEFT_L1 .equ #$40
 WALL_RIGHT_L1 .equ #$5C
+FOUNTAIN_L1 .equ #$4E
 
 SCREEN_BOT .equ #$22
 WALL_BOT_L1 .equ #$8E
+CHEST_L1 .equ #$44
 
-WALL_LINE_SPACING .equ #$20
+
+
+LINE_SPACING .equ #$20
 
 
 draw_room:
@@ -16,6 +21,9 @@ draw_room:
   CMP #0
   BEQ +
     JSR fill_walls
+    JSR draw_chest
+    JSR draw_spirit
+    JSR draw_fountain
   +:
   
   LDA #0
@@ -52,19 +60,19 @@ fill_walls:
     write_to_nt_buffer generic_bytes+0
     write_to_nt_buffer generic_bytes+0
   end_nt_buffer_write
-  begin_nt_buffer_write SCREEN_TOP, WALL_TOP_L1+WALL_LINE_SPACING
+  begin_nt_buffer_write SCREEN_TOP, WALL_TOP_L1+LINE_SPACING
     write_to_nt_buffer generic_bytes+0
     write_to_nt_buffer generic_bytes+0
     write_to_nt_buffer generic_bytes+0
     write_to_nt_buffer generic_bytes+0
   end_nt_buffer_write
-  begin_nt_buffer_write SCREEN_TOP, WALL_TOP_L1+(2*WALL_LINE_SPACING)
+  begin_nt_buffer_write SCREEN_TOP, WALL_TOP_L1+(2*LINE_SPACING)
     write_to_nt_buffer generic_bytes+0
     write_to_nt_buffer generic_bytes+0
     write_to_nt_buffer generic_bytes+0
     write_to_nt_buffer generic_bytes+0
   end_nt_buffer_write
-  begin_nt_buffer_write SCREEN_TOP, WALL_TOP_L1+(3*WALL_LINE_SPACING)
+  begin_nt_buffer_write SCREEN_TOP, WALL_TOP_L1+(3*LINE_SPACING)
     write_to_nt_buffer generic_bytes+0
     write_to_nt_buffer generic_bytes+0
     write_to_nt_buffer generic_bytes+0
@@ -100,19 +108,19 @@ fill_walls:
     write_to_nt_buffer generic_bytes+0
     write_to_nt_buffer generic_bytes+0
   end_nt_buffer_write
-  begin_nt_buffer_write SCREEN_MID, WALL_LEFT_L1+WALL_LINE_SPACING
+  begin_nt_buffer_write SCREEN_MID, WALL_LEFT_L1+LINE_SPACING
     write_to_nt_buffer generic_bytes+0
     write_to_nt_buffer generic_bytes+0
     write_to_nt_buffer generic_bytes+0
     write_to_nt_buffer generic_bytes+0
   end_nt_buffer_write
-  begin_nt_buffer_write SCREEN_MID, WALL_LEFT_L1+(2*WALL_LINE_SPACING)
+  begin_nt_buffer_write SCREEN_MID, WALL_LEFT_L1+(2*LINE_SPACING)
     write_to_nt_buffer generic_bytes+0
     write_to_nt_buffer generic_bytes+0
     write_to_nt_buffer generic_bytes+0
     write_to_nt_buffer generic_bytes+0
   end_nt_buffer_write
-  begin_nt_buffer_write SCREEN_MID, WALL_LEFT_L1+(3*WALL_LINE_SPACING)
+  begin_nt_buffer_write SCREEN_MID, WALL_LEFT_L1+(3*LINE_SPACING)
     write_to_nt_buffer generic_bytes+0
     write_to_nt_buffer generic_bytes+0
     write_to_nt_buffer generic_bytes+0
@@ -148,19 +156,19 @@ fill_walls:
     write_to_nt_buffer generic_bytes+0
     write_to_nt_buffer generic_bytes+0
   end_nt_buffer_write
-  begin_nt_buffer_write SCREEN_MID, WALL_RIGHT_L1+WALL_LINE_SPACING
+  begin_nt_buffer_write SCREEN_MID, WALL_RIGHT_L1+LINE_SPACING
     write_to_nt_buffer generic_bytes+0
     write_to_nt_buffer generic_bytes+0
     write_to_nt_buffer generic_bytes+0
     write_to_nt_buffer generic_bytes+0
   end_nt_buffer_write
-  begin_nt_buffer_write SCREEN_MID, WALL_RIGHT_L1+(2*WALL_LINE_SPACING)
+  begin_nt_buffer_write SCREEN_MID, WALL_RIGHT_L1+(2*LINE_SPACING)
     write_to_nt_buffer generic_bytes+0
     write_to_nt_buffer generic_bytes+0
     write_to_nt_buffer generic_bytes+0
     write_to_nt_buffer generic_bytes+0
   end_nt_buffer_write
-  begin_nt_buffer_write SCREEN_MID, WALL_RIGHT_L1+(3*WALL_LINE_SPACING)
+  begin_nt_buffer_write SCREEN_MID, WALL_RIGHT_L1+(3*LINE_SPACING)
     write_to_nt_buffer generic_bytes+0
     write_to_nt_buffer generic_bytes+0
     write_to_nt_buffer generic_bytes+0
@@ -196,16 +204,61 @@ fill_walls:
     write_to_nt_buffer generic_bytes+0
     write_to_nt_buffer generic_bytes+0
   end_nt_buffer_write
-  begin_nt_buffer_write SCREEN_BOT, WALL_BOT_L1+WALL_LINE_SPACING
+  begin_nt_buffer_write SCREEN_BOT, WALL_BOT_L1+LINE_SPACING
     write_to_nt_buffer generic_bytes+0
     write_to_nt_buffer generic_bytes+0
     write_to_nt_buffer generic_bytes+0
     write_to_nt_buffer generic_bytes+0
   end_nt_buffer_write
-  begin_nt_buffer_write SCREEN_BOT, WALL_BOT_L1+(2*WALL_LINE_SPACING)
+  begin_nt_buffer_write SCREEN_BOT, WALL_BOT_L1+(2*LINE_SPACING)
     write_to_nt_buffer generic_bytes+0
     write_to_nt_buffer generic_bytes+0
     write_to_nt_buffer generic_bytes+0
     write_to_nt_buffer generic_bytes+0
   end_nt_buffer_write
+  RTS
+  
+draw_chest:
+  LDY #$37 ;default fill (floor)
+  
+  LDX player_room
+  LDA dungeon_map,X
+  AND #%00000010
+  CMP #0
+  BEQ +
+    LDY #$3C ;first tile of chest
+  +:
+  
+  STY generic_bytes+0
+  begin_nt_buffer_write SCREEN_BOT, CHEST_L1
+    write_to_nt_buffer generic_bytes+0
+    ;if it's not a ground tile, move to the next tile of the sprite
+    LDA generic_bytes+0
+    CMP #$37
+    BEQ +
+      INC generic_bytes+0
+    +:
+    write_to_nt_buffer generic_bytes+0
+  end_nt_buffer_write
+  
+  begin_nt_buffer_write SCREEN_BOT, CHEST_L1+LINE_SPACING
+    LDA generic_bytes+0
+    CMP #$37
+    BEQ +
+      INC generic_bytes+0
+    +:
+    
+    write_to_nt_buffer generic_bytes+0
+    LDA generic_bytes+0
+    CMP #$37
+    BEQ +
+      INC generic_bytes+0
+    +:
+    write_to_nt_buffer generic_bytes+0
+  end_nt_buffer_write
+  
+  RTS
+draw_spirit:
+  RTS
+draw_fountain:
   RTS
