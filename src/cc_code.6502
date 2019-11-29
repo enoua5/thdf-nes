@@ -69,7 +69,7 @@ cc_move_cursor:
   INC cc_cursor_flash_timer
   LDA cc_cursor_flash_timer
   AND #%00100000
-  STA debug_counter
+  ;STA debug_counter
   ;check buttons and move
   ;NOTE: make sure to set cursor to visible before move
   check_ondown UP_BUTTON
