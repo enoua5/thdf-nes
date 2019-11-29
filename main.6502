@@ -151,8 +151,8 @@ Reset:
     EOR buttons ;rng returned low byte into A
     STA rng_seed+0
     
-    STA byte_to_dec_in
-    JSR byte_to_dec
+    ;STA byte_to_dec_in
+    ;JSR byte_to_dec
     
     LDA game_mode
     
