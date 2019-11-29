@@ -163,4 +163,9 @@ gen_dungeon:
   
   LDA #2
   STA dun_gen
+  
+  
+  LDA #1
+  STA room_update_req
+  
   RTS

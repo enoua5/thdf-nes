@@ -1,5 +1,62 @@
 .incsrc "src/play/stat_readout.6502"
+.incsrc "src/play/load_room.6502"
 
 play_code:
-    JSR update_stat_readout
+  JSR update_stat_readout
+  JSR draw_room
+  
+  ; test -- DO NOT LEAVE IN FINAL
+  check_ondown UP_BUTTON
+  BEQ +
+    LDA #%11110000
+    AND player_room
+    CMP #%11110000
+    BEQ +
+      LDA player_room
+      ADC #%00010000
+      STA player_room
+      
+      LDA #1
+      STA room_update_req
+  +:
+  check_ondown DOWN_BUTTON
+  BEQ +
+    LDA #%11110000
+    AND player_room
+    CMP #%00000000
+    BEQ +
+      LDA player_room
+      SBC #%00010000
+      STA player_room
+      
+      LDA #1
+      STA room_update_req
+  +:
+  check_ondown LEFT_BUTTON
+  BEQ +
+    LDA #%00001111
+    AND player_room
+    CMP #%00000000
+    BEQ +
+      LDA player_room
+      SBC #%00000001
+      STA player_room
+      
+      LDA #1
+      STA room_update_req
+  +:
+  check_ondown RIGHT_BUTTON
+  BEQ +
+    LDA #%00001111
+    AND player_room
+    CMP #%00001111
+    BEQ +
+      LDA player_room
+      ADC #%00000001
+      STA player_room
+      
+      LDA #1
+      STA room_update_req
+  +:
+  ; end test
   RTS
