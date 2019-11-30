@@ -76,9 +76,18 @@ cc_move_cursor:
   BEQ +
     ;unclear current cursor
     JSR set_generic_pointer_to_cursor_position
-    begin_nt_buffer_write generic_pointer+0, generic_pointer+1
-    write_to_nt_buffer #$35
-    end_nt_buffer_write
+    
+    LDA generic_pointer+0
+    STA nt_buf_in_hi
+    LDA generic_pointer+1
+    STA nt_buf_in_lo
+    JSR begin_nt_buffer_write
+    
+    LDA #$35
+    STA nt_buf_in_dt
+    JSR write_to_nt_buffer
+    
+    JSR end_nt_buffer_write
     
     DEC cc_cursor_y
     ;when y changes, we need to move to the new x
@@ -90,9 +99,18 @@ cc_move_cursor:
   BEQ +
     ;unclear current cursor
     JSR set_generic_pointer_to_cursor_position
-    begin_nt_buffer_write generic_pointer+0, generic_pointer+1
-    write_to_nt_buffer #$35
-    end_nt_buffer_write
+    
+    LDA generic_pointer+0
+    STA nt_buf_in_hi
+    LDA generic_pointer+1
+    STA nt_buf_in_lo
+    JSR begin_nt_buffer_write
+    
+    LDA #$35
+    STA nt_buf_in_dt
+    JSR write_to_nt_buffer
+    
+    JSR end_nt_buffer_write
     
     INC cc_cursor_y
     ;when y changes, we need to move to the new x
@@ -104,9 +122,18 @@ cc_move_cursor:
   BEQ +
     ;clear current cursor
     JSR set_generic_pointer_to_cursor_position
-    begin_nt_buffer_write generic_pointer+0, generic_pointer+1
-    write_to_nt_buffer #$24
-    end_nt_buffer_write
+    
+    LDA generic_pointer+0
+    STA nt_buf_in_hi
+    LDA generic_pointer+1
+    STA nt_buf_in_lo
+    JSR begin_nt_buffer_write
+    
+    LDA #$24
+    STA nt_buf_in_dt
+    JSR write_to_nt_buffer
+    
+    JSR end_nt_buffer_write
     
     DEC cc_cursor_x
   +:
@@ -114,9 +141,18 @@ cc_move_cursor:
   BEQ +
     ;clear current cursor
     JSR set_generic_pointer_to_cursor_position
-    begin_nt_buffer_write generic_pointer+0, generic_pointer+1
-    write_to_nt_buffer #$24
-    end_nt_buffer_write
+    
+    LDA generic_pointer+0
+    STA nt_buf_in_hi
+    LDA generic_pointer+1
+    STA nt_buf_in_lo
+    JSR begin_nt_buffer_write
+    
+    LDA #$24
+    STA nt_buf_in_dt
+    JSR write_to_nt_buffer
+    
+    JSR end_nt_buffer_write
     
     INC cc_cursor_x
   +:
@@ -185,23 +221,44 @@ cc_move_cursor:
   
   ;draw current cursor
   JSR set_generic_pointer_to_cursor_position
-  begin_nt_buffer_write generic_pointer+0, generic_pointer+1
+  
+  LDA generic_pointer+0
+  STA nt_buf_in_hi
+  LDA generic_pointer+1
+  STA nt_buf_in_lo
+  JSR begin_nt_buffer_write
+
   LDA cc_cursor_flash_timer
   AND #%00110000
   BEQ +
-    write_to_nt_buffer #$35
+    LDA #$35
+    STA nt_buf_in_dt
+    JSR write_to_nt_buffer
+    
     JMP ++
   +:
-    write_to_nt_buffer #$24
+    LDA #$24
+    STA nt_buf_in_dt
+    JSR write_to_nt_buffer
+    
   ++:
-  end_nt_buffer_write
+  JSR end_nt_buffer_write
   
   RTS
 
 cc_draw_screen:
-  begin_nt_buffer_write #$26, #$08
-  write_to_nt_buffer cc_points_spent
-  end_nt_buffer_write
+  
+  LDA #$26
+  STA nt_buf_in_hi
+  LDA #$08
+  STA nt_buf_in_lo
+  JSR begin_nt_buffer_write
+
+  LDA cc_points_spent
+  STA nt_buf_in_dt
+  JSR write_to_nt_buffer
+    
+  JSR end_nt_buffer_write
   RTS
   
 fill_stats:

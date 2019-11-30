@@ -52,6 +52,74 @@ pull_nt_buffer:
   
   RTS
   
+begin_nt_buffer_write:
+  ;if the previous entry is unfinished, finish it
+  LDA nt_update_buf_wi
+  CMP nt_update_buf_wc
+  BEQ +
+    JSR end_nt_buffer_write
+  +:
+  
+  LDA nt_update_buf_wi
+  CMP #$fb ;minimum space needed for a new entry
+  BCC +
+    LDA #1
+    STA nt_buffer_overflow
+  +:
+  
+  LDA nt_buffer_overflow
+  BNE +
+  
+  LDX nt_update_buf_wi
+  LDA #$00
+  STA nt_buffer, X ;value will be updated to reflect length of update
+                   ;change will occur when end_nt_buffer_write is called
+  
+  INX
+  LDA nt_buf_in_hi
+  STA nt_buffer, X
+  
+  INX
+  LDA nt_buf_in_lo
+  STA nt_buffer, X
+  
+  INX
+  STX nt_update_buf_wc
+  
+  +:
+  
+  RTS
+  
+write_to_nt_buffer:
+  LDA nt_buffer_overflow
+  BNE +
+  
+  LDA nt_buf_in_dt
+  LDX nt_update_buf_wc
+  STA nt_buffer, X
+  INC nt_update_buf_wc
+  
+  ;buffer overflow check
+  LDA nt_update_buf_wc
+  CMP #$FE
+  BNE +
+    LDA #1
+    STA nt_buffer_overflow
+    JSR end_nt_buffer_write
+  +:
+  RTS
+  
+end_nt_buffer_write:
+  ;find and write data lentgh
+  LDA nt_update_buf_wc
+  SBC nt_update_buf_wi
+  LDX nt_update_buf_wi
+  STA nt_buffer, X
+  ;update `write initial` using `write current`
+  LDX nt_update_buf_wc
+  STX nt_update_buf_wi
+  RTS
+  
 byte_to_dec:
   LDA byte_to_dec_in
   

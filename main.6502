@@ -30,6 +30,9 @@ MODE_DEATH = 3
     register_backup .dsb 3
     byte_to_dec_in .dsb 1
     byte_to_dec_out .dsb 3
+    nt_buf_in_hi .dsb 1
+    nt_buf_in_lo .dsb 1
+    nt_buf_in_dt .dsb 1
   .ende
   
   .enum $0300
