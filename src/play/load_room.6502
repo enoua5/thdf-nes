@@ -11,6 +11,9 @@ SCREEN_BOT .equ #$22
 WALL_BOT_L1 .equ #$8E
 CHEST_L1 .equ #$44
 
+ATTR_TABLE .equ #$23
+SPIRIT_ATTR .equ #$CE
+
 
 
 LINE_SPACING .equ #$20
@@ -259,6 +262,62 @@ draw_chest:
   
   RTS
 draw_spirit:
+  LDY #$37 ;default fill (floor)
+  
+  LDX player_room
+  LDA dungeon_map,X
+  AND #%00000100
+  CMP #0
+  BEQ +
+    LDY #$38 ;first tile of spirit
+  +:
+  
+  STY generic_bytes+0
+  begin_nt_buffer_write SCREEN_TOP, SPIRIT_L1
+    write_to_nt_buffer generic_bytes+0
+    ;if it's not a ground tile, move to the next tile of the sprite
+    LDA generic_bytes+0
+    CMP #$37
+    BEQ +
+      INC generic_bytes+0
+    +:
+    write_to_nt_buffer generic_bytes+0
+  end_nt_buffer_write
+  
+  begin_nt_buffer_write SCREEN_TOP, SPIRIT_L1+LINE_SPACING
+    LDA generic_bytes+0
+    CMP #$37
+    BEQ +
+      INC generic_bytes+0
+    +:
+    
+    write_to_nt_buffer generic_bytes+0
+    LDA generic_bytes+0
+    CMP #$37
+    BEQ +
+      INC generic_bytes+0
+    +:
+    write_to_nt_buffer generic_bytes+0
+  end_nt_buffer_write
+  
+  ; apply color
+  LDA #%01010101 ; ground color
+  STA generic_bytes+1
+  
+  LDA generic_bytes+0
+  CMP #$37
+  BEQ +
+    JSR rng
+    LDA rng_seed
+    AND #%00001100
+    ORA generic_bytes+1
+    STA generic_bytes+1
+  +:
+  
+  begin_nt_buffer_write ATTR_TABLE, SPIRIT_ATTR
+    write_to_nt_buffer generic_bytes+0
+  end_nt_buffer_write
+  
   RTS
 draw_fountain:
   RTS
