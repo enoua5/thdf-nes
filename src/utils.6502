@@ -52,12 +52,12 @@ pull_nt_buffer:
   
   RTS
   
-begin_nt_buffer_write:
+_begin_nt_buffer_write:
   ;if the previous entry is unfinished, finish it
   LDA nt_update_buf_wi
   CMP nt_update_buf_wc
   BEQ +
-    JSR end_nt_buffer_write
+    JSR _end_nt_buffer_write
   +:
   
   LDA nt_update_buf_wi
@@ -90,7 +90,7 @@ begin_nt_buffer_write:
   
   RTS
   
-write_to_nt_buffer:
+_write_to_nt_buffer:
   LDA nt_buffer_overflow
   BNE +
   
@@ -105,11 +105,11 @@ write_to_nt_buffer:
   BNE +
     LDA #1
     STA nt_buffer_overflow
-    JSR end_nt_buffer_write
+    JSR _end_nt_buffer_write
   +:
   RTS
   
-end_nt_buffer_write:
+_end_nt_buffer_write:
   ;find and write data lentgh
   LDA nt_update_buf_wc
   SBC nt_update_buf_wi

@@ -27,7 +27,7 @@ gen_room_feats:
   
   ;fountain
   JSR rng
-  AND #%00001111
+  AND #%00000111
   CMP #0
   BNE +
     LDX gen_working_room
@@ -37,7 +37,7 @@ gen_room_feats:
   +:
   ;ghost
   JSR rng
-  AND #%00000111
+  AND #%00000011
   CMP #0
   BNE +
     LDX gen_working_room
@@ -47,7 +47,7 @@ gen_room_feats:
   +:
   ;treasure
   JSR rng
-  AND #%00000011
+  AND #%00000001
   CMP #0
   BNE +
     LDX gen_working_room

@@ -25,7 +25,7 @@ draw_room:
   BEQ +
     JSR fill_walls
     JSR draw_chest
-    ;JSR draw_spirit
+    JSR draw_spirit
     JSR draw_fountain
   +:
   
@@ -57,66 +57,30 @@ fill_walls:
   
   ; draw it
   STY generic_bytes+0
-  
-  LDA SCREEN_TOP
-  STA nt_buf_in_hi
-  LDA WALL_TOP_L1
-  STA nt_buf_in_lo
-  JSR begin_nt_buffer_write
-
-    LDA generic_bytes+0
-    STA nt_buf_in_dt
-    JSR write_to_nt_buffer
-    JSR write_to_nt_buffer
-    JSR write_to_nt_buffer
-    JSR write_to_nt_buffer
-    
-  JSR end_nt_buffer_write
-  
-  ;LDA SCREEN_TOP
-  ;STA nt_buf_in_hi
-  LDA WALL_TOP_L1+LINE_SPACING
-  STA nt_buf_in_lo
-  JSR begin_nt_buffer_write
-
-    LDA generic_bytes+0
-    STA nt_buf_in_dt
-    JSR write_to_nt_buffer
-    JSR write_to_nt_buffer
-    JSR write_to_nt_buffer
-    JSR write_to_nt_buffer
-    
-  JSR end_nt_buffer_write
-  
-  ;LDA SCREEN_TOP
-  ;STA nt_buf_in_hi
-  LDA WALL_TOP_L1+(2*LINE_SPACING)
-  STA nt_buf_in_lo
-  JSR begin_nt_buffer_write
-
-    LDA generic_bytes+0
-    STA nt_buf_in_dt
-    JSR write_to_nt_buffer
-    JSR write_to_nt_buffer
-    JSR write_to_nt_buffer
-    JSR write_to_nt_buffer
-    
-  JSR end_nt_buffer_write
-  
-  ;LDA SCREEN_TOP
-  ;STA nt_buf_in_hi
-  LDA WALL_TOP_L1+(3*LINE_SPACING)
-  STA nt_buf_in_lo
-  JSR begin_nt_buffer_write
-
-    LDA generic_bytes+0
-    STA nt_buf_in_dt
-    JSR write_to_nt_buffer
-    JSR write_to_nt_buffer
-    JSR write_to_nt_buffer
-    JSR write_to_nt_buffer
-    
-  JSR end_nt_buffer_write
+  begin_nt_buffer_write SCREEN_TOP, WALL_TOP_L1
+    write_to_nt_buffer generic_bytes+0
+    JSR _write_to_nt_buffer
+    JSR _write_to_nt_buffer
+    JSR _write_to_nt_buffer
+  end_nt_buffer_write
+  begin_nt_buffer_write SCREEN_TOP, WALL_TOP_L1+LINE_SPACING
+    write_to_nt_buffer generic_bytes+0
+    JSR _write_to_nt_buffer
+    JSR _write_to_nt_buffer
+    JSR _write_to_nt_buffer
+  end_nt_buffer_write
+  begin_nt_buffer_write SCREEN_TOP, WALL_TOP_L1+(2*LINE_SPACING)
+    write_to_nt_buffer generic_bytes+0
+    JSR _write_to_nt_buffer
+    JSR _write_to_nt_buffer
+    JSR _write_to_nt_buffer
+  end_nt_buffer_write
+  begin_nt_buffer_write SCREEN_TOP, WALL_TOP_L1+(3*LINE_SPACING)
+    write_to_nt_buffer generic_bytes+0
+    JSR _write_to_nt_buffer
+    JSR _write_to_nt_buffer
+    JSR _write_to_nt_buffer
+  end_nt_buffer_write
  
   ; check leftward
   LDY #$37 ;default fill (floor)
@@ -141,66 +105,30 @@ fill_walls:
   
   ; draw it
   STY generic_bytes+0
-  
-  LDA SCREEN_MID
-  STA nt_buf_in_hi
-  LDA WALL_LEFT_L1
-  STA nt_buf_in_lo
-  JSR begin_nt_buffer_write
-
-    LDA generic_bytes+0
-    STA nt_buf_in_dt
-    JSR write_to_nt_buffer
-    JSR write_to_nt_buffer
-    JSR write_to_nt_buffer
-    JSR write_to_nt_buffer
-    
-  JSR end_nt_buffer_write
-  
-  ;LDA SCREEN_MID
-  ;STA nt_buf_in_hi
-  LDA WALL_LEFT_L1+LINE_SPACING
-  STA nt_buf_in_lo
-  JSR begin_nt_buffer_write
-
-    LDA generic_bytes+0
-    STA nt_buf_in_dt
-    JSR write_to_nt_buffer
-    JSR write_to_nt_buffer
-    JSR write_to_nt_buffer
-    JSR write_to_nt_buffer
-    
-  JSR end_nt_buffer_write
-  
-  ;LDA SCREEN_MID
-  ;STA nt_buf_in_hi
-  LDA WALL_LEFT_L1+(2*LINE_SPACING)
-  STA nt_buf_in_lo
-  JSR begin_nt_buffer_write
-
-    LDA generic_bytes+0
-    STA nt_buf_in_dt
-    JSR write_to_nt_buffer
-    JSR write_to_nt_buffer
-    JSR write_to_nt_buffer
-    JSR write_to_nt_buffer
-    
-  JSR end_nt_buffer_write
-  
-  ;LDA SCREEN_MID
-  ;STA nt_buf_in_hi
-  LDA WALL_LEFT_L1+(3*LINE_SPACING)
-  STA nt_buf_in_lo
-  JSR begin_nt_buffer_write
-
-    LDA generic_bytes+0
-    STA nt_buf_in_dt
-    JSR write_to_nt_buffer
-    JSR write_to_nt_buffer
-    JSR write_to_nt_buffer
-    JSR write_to_nt_buffer
-    
-  JSR end_nt_buffer_write
+  begin_nt_buffer_write SCREEN_MID, WALL_LEFT_L1
+    write_to_nt_buffer generic_bytes+0
+    JSR _write_to_nt_buffer
+    JSR _write_to_nt_buffer
+    JSR _write_to_nt_buffer
+  end_nt_buffer_write
+  begin_nt_buffer_write SCREEN_MID, WALL_LEFT_L1+LINE_SPACING
+    write_to_nt_buffer generic_bytes+0
+    JSR _write_to_nt_buffer
+    JSR _write_to_nt_buffer
+    JSR _write_to_nt_buffer
+  end_nt_buffer_write
+  begin_nt_buffer_write SCREEN_MID, WALL_LEFT_L1+(2*LINE_SPACING)
+    write_to_nt_buffer generic_bytes+0
+    JSR _write_to_nt_buffer
+    JSR _write_to_nt_buffer
+    JSR _write_to_nt_buffer
+  end_nt_buffer_write
+  begin_nt_buffer_write SCREEN_MID, WALL_LEFT_L1+(3*LINE_SPACING)
+    write_to_nt_buffer generic_bytes+0
+    JSR _write_to_nt_buffer
+    JSR _write_to_nt_buffer
+    JSR _write_to_nt_buffer
+  end_nt_buffer_write
  
   ; check rightward
   LDY #$37 ;default fill (floor)
@@ -225,66 +153,30 @@ fill_walls:
   
   ; draw it
   STY generic_bytes+0
-  
-  ;LDA SCREEN_MID
-  ;STA nt_buf_in_hi
-  LDA WALL_RIGHT_L1
-  STA nt_buf_in_lo
-  JSR begin_nt_buffer_write
-
-    LDA generic_bytes+0
-    STA nt_buf_in_dt
-    JSR write_to_nt_buffer
-    JSR write_to_nt_buffer
-    JSR write_to_nt_buffer
-    JSR write_to_nt_buffer
-    
-  JSR end_nt_buffer_write
-  
-  ;LDA SCREEN_MID
-  ;STA nt_buf_in_hi
-  LDA WALL_RIGHT_L1+LINE_SPACING
-  STA nt_buf_in_lo
-  JSR begin_nt_buffer_write
-
-    LDA generic_bytes+0
-    STA nt_buf_in_dt
-    JSR write_to_nt_buffer
-    JSR write_to_nt_buffer
-    JSR write_to_nt_buffer
-    JSR write_to_nt_buffer
-    
-  JSR end_nt_buffer_write
-  
-  ;LDA SCREEN_MID
-  ;STA nt_buf_in_hi
-  LDA WALL_RIGHT_L1+(2*LINE_SPACING)
-  STA nt_buf_in_lo
-  JSR begin_nt_buffer_write
-
-    LDA generic_bytes+0
-    STA nt_buf_in_dt
-    JSR write_to_nt_buffer
-    JSR write_to_nt_buffer
-    JSR write_to_nt_buffer
-    JSR write_to_nt_buffer
-    
-  JSR end_nt_buffer_write
-  
-  ;LDA SCREEN_MID
-  ;STA nt_buf_in_hi
-  LDA WALL_RIGHT_L1+(3*LINE_SPACING)
-  STA nt_buf_in_lo
-  JSR begin_nt_buffer_write
-
-    LDA generic_bytes+0
-    STA nt_buf_in_dt
-    JSR write_to_nt_buffer
-    JSR write_to_nt_buffer
-    JSR write_to_nt_buffer
-    JSR write_to_nt_buffer
-    
-  JSR end_nt_buffer_write
+  begin_nt_buffer_write SCREEN_MID, WALL_RIGHT_L1
+    write_to_nt_buffer generic_bytes+0
+    JSR _write_to_nt_buffer
+    JSR _write_to_nt_buffer
+    JSR _write_to_nt_buffer
+  end_nt_buffer_write
+  begin_nt_buffer_write SCREEN_MID, WALL_RIGHT_L1+LINE_SPACING
+    write_to_nt_buffer generic_bytes+0
+    JSR _write_to_nt_buffer
+    JSR _write_to_nt_buffer
+    JSR _write_to_nt_buffer
+  end_nt_buffer_write
+  begin_nt_buffer_write SCREEN_MID, WALL_RIGHT_L1+(2*LINE_SPACING)
+    write_to_nt_buffer generic_bytes+0
+    JSR _write_to_nt_buffer
+    JSR _write_to_nt_buffer
+    JSR _write_to_nt_buffer
+  end_nt_buffer_write
+  begin_nt_buffer_write SCREEN_MID, WALL_RIGHT_L1+(3*LINE_SPACING)
+    write_to_nt_buffer generic_bytes+0
+    JSR _write_to_nt_buffer
+    JSR _write_to_nt_buffer
+    JSR _write_to_nt_buffer
+  end_nt_buffer_write
  
   ; check downward
   LDY #$37 ;default fill (floor)
@@ -309,51 +201,24 @@ fill_walls:
   
   ; draw it
   STY generic_bytes+0
-  
-  LDA SCREEN_BOT
-  STA nt_buf_in_hi
-  LDA WALL_BOT_L1
-  STA nt_buf_in_lo
-  JSR begin_nt_buffer_write
-
-    LDA generic_bytes+0
-    STA nt_buf_in_dt
-    JSR write_to_nt_buffer
-    JSR write_to_nt_buffer
-    JSR write_to_nt_buffer
-    JSR write_to_nt_buffer
-    
-  JSR end_nt_buffer_write
-  
-  ;LDA SCREEN_BOT
-  ;STA nt_buf_in_hi
-  LDA WALL_BOT_L1+LINE_SPACING
-  STA nt_buf_in_lo
-  JSR begin_nt_buffer_write
-
-    LDA generic_bytes+0
-    STA nt_buf_in_dt
-    JSR write_to_nt_buffer
-    JSR write_to_nt_buffer
-    JSR write_to_nt_buffer
-    JSR write_to_nt_buffer
-    
-  JSR end_nt_buffer_write
-  
-  ;LDA SCREEN_BOT
-  ;STA nt_buf_in_hi
-  LDA WALL_BOT_L1+(2*LINE_SPACING)
-  STA nt_buf_in_lo
-  JSR begin_nt_buffer_write
-
-    LDA generic_bytes+0
-    STA nt_buf_in_dt
-    JSR write_to_nt_buffer
-    JSR write_to_nt_buffer
-    JSR write_to_nt_buffer
-    JSR write_to_nt_buffer
-    
-  JSR end_nt_buffer_write
+  begin_nt_buffer_write SCREEN_BOT, WALL_BOT_L1
+    write_to_nt_buffer generic_bytes+0
+    JSR _write_to_nt_buffer
+    JSR _write_to_nt_buffer
+    JSR _write_to_nt_buffer
+  end_nt_buffer_write
+  begin_nt_buffer_write SCREEN_BOT, WALL_BOT_L1+LINE_SPACING
+    write_to_nt_buffer generic_bytes+0
+    JSR _write_to_nt_buffer
+    JSR _write_to_nt_buffer
+    JSR _write_to_nt_buffer
+  end_nt_buffer_write
+  begin_nt_buffer_write SCREEN_BOT, WALL_BOT_L1+(2*LINE_SPACING)
+    write_to_nt_buffer generic_bytes+0
+    JSR _write_to_nt_buffer
+    JSR _write_to_nt_buffer
+    JSR _write_to_nt_buffer
+  end_nt_buffer_write
   RTS
   
 draw_chest:
@@ -368,56 +233,32 @@ draw_chest:
   +:
   
   STY generic_bytes+0
-  
-  LDA SCREEN_BOT
-  STA nt_buf_in_hi
-  LDA CHEST_L1
-  STA nt_buf_in_lo
-  JSR begin_nt_buffer_write
-
-    LDA generic_bytes+0
-    STA nt_buf_in_dt
-    JSR write_to_nt_buffer
-    
+  begin_nt_buffer_write SCREEN_BOT, CHEST_L1
+    write_to_nt_buffer generic_bytes+0
     ;if it's not a ground tile, move to the next tile of the sprite
     LDA generic_bytes+0
     CMP #$37
     BEQ +
       INC generic_bytes+0
     +:
-    LDA generic_bytes+0
-    STA nt_buf_in_dt
-    JSR write_to_nt_buffer
-    
-  JSR end_nt_buffer_write
+    write_to_nt_buffer generic_bytes+0
+  end_nt_buffer_write
   
-  
-  ;LDA SCREEN_BOT
-  ;STA nt_buf_in_hi
-  LDA CHEST_L1+LINE_SPACING
-  STA nt_buf_in_lo
-  JSR begin_nt_buffer_write
-
+  begin_nt_buffer_write SCREEN_BOT, CHEST_L1+LINE_SPACING
     LDA generic_bytes+0
     CMP #$37
     BEQ +
       INC generic_bytes+0
     +:
     
-    LDA generic_bytes+0
-    STA nt_buf_in_dt
-    JSR write_to_nt_buffer
-    
+    write_to_nt_buffer generic_bytes+0
     LDA generic_bytes+0
     CMP #$37
     BEQ +
       INC generic_bytes+0
     +:
-    LDA generic_bytes+0
-    STA nt_buf_in_dt
-    JSR write_to_nt_buffer
-    
-  JSR end_nt_buffer_write
+    write_to_nt_buffer generic_bytes+0
+  end_nt_buffer_write
   
   RTS
 draw_spirit:
@@ -432,58 +273,34 @@ draw_spirit:
   +:
   
   STY generic_bytes+0
-  
-  LDA SCREEN_TOP
-  STA nt_buf_in_hi
-  LDA SPIRIT_L1
-  STA nt_buf_in_lo
-  JSR begin_nt_buffer_write
-
-    LDA generic_bytes+0
-    STA nt_buf_in_dt
-    JSR write_to_nt_buffer
-    
+  begin_nt_buffer_write SCREEN_TOP, SPIRIT_L1
+    write_to_nt_buffer generic_bytes+0
     ;if it's not a ground tile, move to the next tile of the sprite
     LDA generic_bytes+0
     CMP #$37
     BEQ +
       INC generic_bytes+0
     +:
-    LDA generic_bytes+0
-    STA nt_buf_in_dt
-    JSR write_to_nt_buffer
-    
-  JSR end_nt_buffer_write
+    write_to_nt_buffer generic_bytes+0
+  end_nt_buffer_write
   
-  
-  ;LDA SCREEN_TOP
-  ;STA nt_buf_in_hi
-  LDA SPIRIT_L1+LINE_SPACING
-  STA nt_buf_in_lo
-  JSR begin_nt_buffer_write
-
+  begin_nt_buffer_write SCREEN_TOP, SPIRIT_L1+LINE_SPACING
     LDA generic_bytes+0
     CMP #$37
     BEQ +
       INC generic_bytes+0
     +:
     
-    LDA generic_bytes+0
-    STA nt_buf_in_dt
-    JSR write_to_nt_buffer
-    
+    write_to_nt_buffer generic_bytes+0
     LDA generic_bytes+0
     CMP #$37
     BEQ +
       INC generic_bytes+0
     +:
-    LDA generic_bytes+0
-    STA nt_buf_in_dt
-    JSR write_to_nt_buffer
-    
-  JSR end_nt_buffer_write
+    write_to_nt_buffer generic_bytes+0
+  end_nt_buffer_write
   
-  ; apply color
+   apply color
   LDA #%01010101 ; ground color
   STA generic_bytes+1
   
@@ -497,18 +314,9 @@ draw_spirit:
     STA generic_bytes+1
   +:
   
-  
-  LDA ATTR_TABLE
-  STA nt_buf_in_hi
-  LDA SPIRIT_ATTR
-  STA nt_buf_in_lo
-  JSR begin_nt_buffer_write
-
-    LDA generic_bytes+0
-    STA nt_buf_in_dt
-    JSR write_to_nt_buffer
-    
-  JSR end_nt_buffer_write
+  begin_nt_buffer_write ATTR_TABLE, SPIRIT_ATTR
+    write_to_nt_buffer generic_bytes+0
+  end_nt_buffer_write
   
   RTS
 draw_fountain:

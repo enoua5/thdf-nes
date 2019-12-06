@@ -1,4 +1,26 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+; Interfaces
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+MACRO begin_nt_buffer_write nt_pos_hi, nt_pos_lo
+  LDA nt_pos_hi
+  STA nt_buf_in_hi
+  LDA nt_pos_lo
+  STA nt_buf_in_lo
+  JSR _begin_nt_buffer_write
+ENDM
+
+MACRO write_to_nt_buffer data
+  LDA data
+  STA nt_buf_in_dt
+  JSR _write_to_nt_buffer
+ENDM
+
+MACRO end_nt_buffer_write
+  JSR _end_nt_buffer_write
+ENDM
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ; UTILS
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
