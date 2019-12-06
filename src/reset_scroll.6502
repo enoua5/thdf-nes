@@ -1,3 +1,4 @@
+reset_scroll:
   LDA #%11111110 ;turn off last bit of ppu_ctrl
   AND ppu_ctrl
   STA ppu_ctrl
@@ -23,3 +24,5 @@
   LDA #$00
   STA $2005
   STA $2005
+  
+  RTS

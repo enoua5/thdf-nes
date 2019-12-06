@@ -66,26 +66,6 @@ MACRO load_nametable nt_number, nt_pointer
     BNE -
 ENDM
 
-MACRO veryify_nmi_safe
-  ;backup registers, so we can restore them
-  PHP
-  STA register_backup
-  STX register_backup+1
-  STY register_backup+2
-  ;check the flag
-  LDA proc_frame
-  CMP #0
-  BEQ +
-    ;restore registers and return from interupt
-    LDA register_backup
-    LDX register_backup+1
-    LDY register_backup+2
-    PLP
-    RTI
-  +: ;we're safe to proceed
-  PLP
-ENDM
-
 MACRO check_ondown button_id
   LDA button_ondown
   AND button_id

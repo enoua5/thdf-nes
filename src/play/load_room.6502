@@ -22,15 +22,26 @@ LINE_SPACING .equ #$20
 draw_room:
   LDA room_update_req
   CMP #0
-  BEQ +
-    JSR fill_walls
-    JSR draw_chest
-    JSR draw_spirit
-    JSR draw_fountain
-  +:
+  BEQ ++
+    CMP #1
+    BNE +
+      JSR fill_walls
+      
+      INC room_update_req
+      RTS
+    +:
+    
+    CMP #2
+    BNE +
+      JSR draw_chest
+      JSR draw_spirit
+      JSR draw_fountain
+    +:
+    
+    LDA #0
+    STA room_update_req
+  ++:
   
-  LDA #0
-  STA room_update_req
   RTS
   
 fill_walls:

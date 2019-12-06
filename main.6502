@@ -224,13 +224,13 @@ NMI:
   
   JSR pull_nt_buffer
   
-  .incsrc "src/reset_scroll.6502"
-  
   LDA ppu_mask
   STA $2001
   
   LDA #0
   STA waiting_for_frame
+  
+  JSR reset_scroll
   
   LDA register_backup
   LDX register_backup+1
@@ -243,6 +243,7 @@ IRQ:
   RTI
   
   .incsrc "src/utils.6502"
+  .incsrc "src/reset_scroll.6502"
   .incsrc "src/title_code.6502"
   .incsrc "src/cc_code.6502"
   .incsrc "src/generator.6502"
