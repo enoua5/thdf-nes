@@ -300,7 +300,7 @@ draw_spirit:
     write_to_nt_buffer generic_bytes+0
   end_nt_buffer_write
   
-   apply color
+  ; apply color
   LDA #%01010101 ; ground color
   STA generic_bytes+1
   
