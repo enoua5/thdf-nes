@@ -318,15 +318,26 @@ draw_spirit:
   LDA generic_bytes+0
   CMP #$37
   BEQ +
+    ;seed the rng to make the spirit consistent
+    LDA player_floor
+    STA rng_seed
+    LDA player_room
+    STA player_room
+  
     JSR rng
     LDA rng_seed
     AND #%00001100
-    ORA generic_bytes+1
+    STA generic_bytes+2
+    
+    LDA generic_bytes+1
+    AND #%11110011
+    
+    ORA generic_bytes+2
     STA generic_bytes+1
   +:
   
   begin_nt_buffer_write ATTR_TABLE, SPIRIT_ATTR
-    write_to_nt_buffer generic_bytes+0
+    write_to_nt_buffer generic_bytes+1
   end_nt_buffer_write
   
   RTS
