@@ -13,10 +13,12 @@ CHEST_L1 .equ #$44
 
 ATTR_TABLE .equ #$23
 SPIRIT_ATTR .equ #$CE
+FOUNTAIN_ATTR .equ #$D3
 
 
 
 LINE_SPACING .equ #$20
+ATTR_SPACING .equ #$08
 
 
 draw_room:
@@ -322,7 +324,7 @@ draw_spirit:
     LDA player_floor
     STA rng_seed
     LDA player_room
-    STA player_room
+    STA rng_seed+1
   
     JSR rng
     LDA rng_seed
@@ -342,4 +344,207 @@ draw_spirit:
   
   RTS
 draw_fountain:
+  LDY #$37 ;default fill (floor)
+  
+  LDX player_room
+  LDA dungeon_map,X
+  AND #%00001000
+  CMP #0
+  BEQ +
+    LDY #$60 ;first tile of fountain
+  +:
+  
+  STY generic_bytes+0
+  begin_nt_buffer_write SCREEN_MID, FOUNTAIN_L1
+    write_to_nt_buffer generic_bytes+0
+    ;if it's not a ground tile, move to the next tile of the sprite
+    LDA generic_bytes+0
+    CMP #$37
+    BEQ +
+      INC generic_bytes+0
+    +:
+    write_to_nt_buffer generic_bytes+0
+    
+    LDA generic_bytes+0
+    CMP #$37
+    BEQ +
+      INC generic_bytes+0
+    +:
+    write_to_nt_buffer generic_bytes+0
+    
+    LDA generic_bytes+0
+    CMP #$37
+    BEQ +
+      INC generic_bytes+0
+    +:
+    write_to_nt_buffer generic_bytes+0
+  end_nt_buffer_write
+  
+  begin_nt_buffer_write SCREEN_MID, FOUNTAIN_L1+LINE_SPACING
+    LDA generic_bytes+0
+    CMP #$37
+    BEQ +
+      INC generic_bytes+0
+    +:
+    write_to_nt_buffer generic_bytes+0
+    
+    LDA generic_bytes+0
+    CMP #$37
+    BEQ +
+      INC generic_bytes+0
+    +:
+    write_to_nt_buffer generic_bytes+0
+    
+    LDA generic_bytes+0
+    CMP #$37
+    BEQ +
+      INC generic_bytes+0
+    +:
+    write_to_nt_buffer generic_bytes+0
+    
+    LDA generic_bytes+0
+    CMP #$37
+    BEQ +
+      INC generic_bytes+0
+    +:
+    write_to_nt_buffer generic_bytes+0
+  end_nt_buffer_write
+  
+  begin_nt_buffer_write SCREEN_MID, FOUNTAIN_L1+(2*LINE_SPACING)
+    LDA generic_bytes+0
+    CMP #$37
+    BEQ +
+      INC generic_bytes+0
+    +:
+    write_to_nt_buffer generic_bytes+0
+    
+    LDA generic_bytes+0
+    CMP #$37
+    BEQ +
+      INC generic_bytes+0
+    +:
+    write_to_nt_buffer generic_bytes+0
+    
+    LDA generic_bytes+0
+    CMP #$37
+    BEQ +
+      INC generic_bytes+0
+    +:
+    write_to_nt_buffer generic_bytes+0
+    
+    LDA generic_bytes+0
+    CMP #$37
+    BEQ +
+      INC generic_bytes+0
+    +:
+    write_to_nt_buffer generic_bytes+0
+  end_nt_buffer_write
+  
+  begin_nt_buffer_write SCREEN_MID, FOUNTAIN_L1+(3*LINE_SPACING)
+    LDA generic_bytes+0
+    CMP #$37
+    BEQ +
+      INC generic_bytes+0
+    +:
+    write_to_nt_buffer generic_bytes+0
+    
+    LDA generic_bytes+0
+    CMP #$37
+    BEQ +
+      INC generic_bytes+0
+    +:
+    write_to_nt_buffer generic_bytes+0
+    
+    LDA generic_bytes+0
+    CMP #$37
+    BEQ +
+      INC generic_bytes+0
+    +:
+    write_to_nt_buffer generic_bytes+0
+    
+    LDA generic_bytes+0
+    CMP #$37
+    BEQ +
+      INC generic_bytes+0
+    +:
+    write_to_nt_buffer generic_bytes+0
+  end_nt_buffer_write
+  
+  ; apply color
+  LDA #%01010101 ; ground color
+  STA generic_bytes+1
+  
+  LDA generic_bytes+0
+  CMP #$37
+  BEQ +relay
+    ;seed the rng to make the color consistent
+    LDA player_floor
+    STA rng_seed
+    LDA player_room
+    STA rng_seed+1
+  
+    JSR rng
+    LDA rng_seed
+    AND #%11000000
+    STA generic_bytes+2
+    
+    ;the fountain lays in the corners of 4 attr-table regions
+    LDA generic_bytes+1
+    AND #%00111111
+    ORA generic_bytes+2
+    STA generic_bytes+10
+    LSR generic_bytes+2
+    LSR generic_bytes+2
+    
+    LDA generic_bytes+1
+    AND #%11001111
+    ORA generic_bytes+2
+    STA generic_bytes+11
+    LSR generic_bytes+2
+    LSR generic_bytes+2
+    
+    LDA generic_bytes+1
+    AND #%11110011
+    ORA generic_bytes+2
+    STA generic_bytes+12
+    LSR generic_bytes+2
+    LSR generic_bytes+2
+    
+    LDA generic_bytes+1
+    AND #%11111100
+    ORA generic_bytes+2
+    STA generic_bytes+13
+    LSR generic_bytes+2
+    LSR generic_bytes+2
+    
+    STA generic_bytes+1
+    
+    ;jump was too far
+    JMP +pass_relay
+    +relay:
+      JMP +
+    pass_relay:
+    
+    begin_nt_buffer_write ATTR_TABLE, FOUNTAIN_ATTR
+      write_to_nt_buffer generic_bytes+10
+      write_to_nt_buffer generic_bytes+11
+    end_nt_buffer_write
+    begin_nt_buffer_write ATTR_TABLE, FOUNTAIN_ATTR+ATTR_SPACING
+      write_to_nt_buffer generic_bytes+12
+      write_to_nt_buffer generic_bytes+13
+    end_nt_buffer_write
+    
+    JMP ++
+  +:
+  
+  begin_nt_buffer_write ATTR_TABLE, FOUNTAIN_ATTR
+    write_to_nt_buffer generic_bytes+1
+    write_to_nt_buffer generic_bytes+1
+  end_nt_buffer_write
+  begin_nt_buffer_write ATTR_TABLE, FOUNTAIN_ATTR+ATTR_SPACING
+    write_to_nt_buffer generic_bytes+1
+    write_to_nt_buffer generic_bytes+1
+  end_nt_buffer_write  
+  
+  ++:
   RTS
