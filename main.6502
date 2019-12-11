@@ -122,8 +122,6 @@ Reset:
     STA $0500, x
     STA $0600, x
     STA $0700, x
-    LDA #$FE
-    STA $0200, x
     INX
     BNE @clrmem
 
@@ -142,13 +140,28 @@ Reset:
     STA ppu_ctrl
     STA $2000
     
-    LDA #%01011000 ; enable sprites, enable background
+    LDA #%00011000 ; enable sprites, enable background
     STA ppu_mask
     STA $2001
     
     ;rng_seed can't be 0
     LDA #$42
     STA rng_seed+0
+    
+    ; load sprite OAM 
+    LDA #<sprite_data
+    STA generic_pointer+0
+    LDA #>sprite_data
+    STA  generic_pointer+1
+    
+    LDY #0
+    -:
+      LDA (generic_pointer),y
+      STA $0200,y
+      INY
+    BNE -
+    
+    
   main:
     .incsrc "src/controller.6502"
     ; tick forward prng and xor with controller every frame for more entropy
@@ -190,7 +203,6 @@ Reset:
         LDA waiting_for_frame
         CMP #0
       BNE -
-      
       JMP main
 
 NMI:
@@ -233,6 +245,7 @@ NMI:
   
   JSR reset_scroll
   
+  LDA #$00
   STA $2003  ; set the low byte (00) of the RAM address for OAMDMA
   LDA #$02
   STA $4014  ; set the high byte (02) of the RAM address, start the transfer
@@ -272,6 +285,9 @@ cc_stat_options:
   .incbin "dat/player_stat.dat"
 enemy_starting_stats:
   .incbin "dat/enemy_stat.dat"
+  
+sprite_data:
+  .incbin "dat/sprite_data.dat"
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ; interupt vectors
