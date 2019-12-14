@@ -1,9 +1,12 @@
-  player .dsb 20
-  warrior .dsb 20
-  theif .dsb 20
-  mage .dsb 20
-  tank .dsb 20
-  dragon .dsb 20
+  ACTOR_DATA_LENGTH .equ 21
+
+  actors .dsb 0 ;anchor for finding actors
+  player .dsb ACTOR_DATA_LENGTH
+  warrior .dsb ACTOR_DATA_LENGTH
+  theif .dsb ACTOR_DATA_LENGTH
+  mage .dsb ACTOR_DATA_LENGTH
+  tank .dsb ACTOR_DATA_LENGTH
+  dragon .dsb ACTOR_DATA_LENGTH
   ;some consts to keep track of locations in those structs
   ;DO NOT REORDER THIS BLOCK OR ADD DATA BEFORE IT!!
   ACT_HPMAX .equ 0
@@ -18,12 +21,13 @@
   ACT_X .equ 8
   ACT_Y .equ 9
   ACT_ANIM_TIMER .equ 10
-  ACT_FIRE_X .equ 11
-  ACT_FIRE_Y .equ 12
-  ACT_FIRE_XVEL .equ 13
-  ACT_FIRE_YVEL .equ 14
-  ACT_FIRE_ANIM_TIMER .equ 15
-  ACT_READOUT_DIGITS .equ 16
-  ACT_READOUT_DIGIT2 .equ 17
-  ACT_READOUT_DIGIT3 .equ 18
-  ACT_READOUT_TIMER .equ 19
+  ACT_FACE .equ 11
+  ACT_FIRE_X .equ 12
+  ACT_FIRE_Y .equ 13
+  ACT_FIRE_XVEL .equ 14
+  ACT_FIRE_YVEL .equ 15
+  ACT_FIRE_ANIM_TIMER .equ 16
+  ACT_READOUT_DIGITS .equ 17
+  ACT_READOUT_DIGIT2 .equ 18
+  ACT_READOUT_DIGIT3 .equ 19
+  ACT_READOUT_TIMER .equ 20

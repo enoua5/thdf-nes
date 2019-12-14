@@ -1,0 +1,155 @@
+; there's some weird bug where having stuff in the room causes the sprite to render wrong
+
+ACT_SPRITE_HEAD  .equ 0
+ACT_SPRITE_BODY  .equ 1*4
+ACT_SPRITE_FIRE  .equ 2*4
+ACT_SPRITE_HILT  .equ 3*4
+ACT_SPRITE_BLADE .equ 4*4
+ACT_SPRITE_DIG1  .equ 5*4
+ACT_SPRITE_DIG2  .equ 6*4
+ACT_SPRITE_DIG3  .equ 7*4
+
+SPRITE_DATA_Y .equ 0
+SPRITE_DATA_I .equ 1
+SPRITE_DATA_A .equ 2
+SPRITE_DATA_X .equ 3
+
+ACT_SPRITE_DATA_LENGTH .equ 8*4 ; each sprite is 4 bytes
+ACT_NUM_FRAMES .equ 7
+
+actor_tick:
+  RTS
+draw_actors:
+  LDX player_room
+  LDA dungeon_map, X
+  AND #%00001111 ; we only care about the enemies
+  STA enemies_in_room
+  
+  LDA #0
+  STA actor_data_pointer
+  STA actor_sprite_pointer
+  LDA #$10
+  STA actor_sprite_rom_pointer
+  
+  -:
+    ; skip to the next one if the enemy isn't in the room
+    LDA enemies_in_room
+    AND #%00000001
+    CMP #0
+    BEQ +
+    
+      JSR draw_spec_actor
+      ;move pointers to next
+      LDA ACT_SPRITE_DATA_LENGTH
+      ADC actor_data_pointer
+      STA actor_data_pointer
+      
+      LDA ACTOR_DATA_LENGTH
+      ADC actor_data_pointer
+      STA actor_data_pointer
+      
+      LDA #$10
+      ADC actor_sprite_rom_pointer
+      STA actor_sprite_rom_pointer
+    +:
+    CLC
+    ROR enemies_in_room
+  LDA enemies_in_room
+  CMP #0
+  BNE -
+  
+  RTS
+  
+draw_spec_actor:
+  ; put body in body spot
+  
+  LDX actor_data_pointer
+  LDA actors+ACT_X,X
+  SEC
+  SBC #4 ;actor data holds location of middle of leg sprite
+  LDX actor_sprite_pointer
+  STA $0200+ACT_SPRITE_BODY+SPRITE_DATA_X,X
+  STA $0200+ACT_SPRITE_HEAD+SPRITE_DATA_X,X
+  
+  LDX actor_data_pointer
+  LDA actors+ACT_Y,X
+  SEC
+  SBC #4 ;actor data holds location of middle of leg sprite
+  LDX actor_sprite_pointer
+  STA $0200+ACT_SPRITE_BODY+SPRITE_DATA_Y,X
+  SEC
+  SBC #8
+  STA $0200+ACT_SPRITE_HEAD+SPRITE_DATA_Y,X
+  
+  ; make body be right body
+  
+  LDA actors+ACT_FACE,X
+  BNE +
+  ; GOING DOWN
+    LDA actor_sprite_rom_pointer
+    ;"add 0"
+    LDX actor_sprite_pointer
+    STA $0200+ACT_SPRITE_HEAD+SPRITE_DATA_I,X
+    
+    ADC #ACT_NUM_FRAMES
+    INX
+    STA $0200+ACT_SPRITE_BODY+SPRITE_DATA_I,X
+    
+    ; get step side
+    
+    LDX actor_data_pointer
+    LDA actors+ACT_ANIM_TIMER,X
+    
+    AND #%00010000
+    CLC
+    ROL
+    ROL
+    
+    STA generic_bytes
+    
+    LDX actor_sprite_pointer
+    LDA $0200+ACT_SPRITE_HEAD+SPRITE_DATA_A,X
+    AND #%00111111
+    ORA generic_bytes
+    STA $0200+ACT_SPRITE_HEAD+SPRITE_DATA_A,X
+    
+    LDA $0200+ACT_SPRITE_BODY+SPRITE_DATA_A,X
+    AND #%00111111
+    ORA generic_bytes
+    STA $0200+ACT_SPRITE_BODY+SPRITE_DATA_A,X
+    
+    ; TEST CODE
+    LDX actor_data_pointer
+    LDA #1
+    CLC
+    ADC actors+ACT_ANIM_TIMER,X
+    STA actors+ACT_ANIM_TIMER,X
+    
+    JMP ++
+  +:
+  SEC
+  SBC #1
+  BNE +
+  ; GOING UP
+    JMP ++
+  +:
+  SEC
+  SBC #1
+  BNE +
+  ; GOING RIGHT
+    JMP ++
+  +:
+  SEC
+  SBC #1
+  BNE ++
+  ; GOING LEFT
+    
+  ++:
+  ;TEST CODE
+  LDA #1
+  LDX actor_data_pointer
+  CLC
+  ADC actors+ACT_Y,X
+  STA actors+ACT_Y,X
+  
+  RTS

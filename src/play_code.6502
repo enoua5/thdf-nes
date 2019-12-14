@@ -1,9 +1,12 @@
 .incsrc "src/play/stat_readout.6502"
 .incsrc "src/play/load_room.6502"
+.incsrc "src/play/actor_code.6502"
 
 play_code:
   JSR update_stat_readout
   JSR draw_room
+  JSR actor_tick
+  JSR draw_actors
   
   ; test -- DO NOT LEAVE IN FINAL
   check_ondown UP_BUTTON

@@ -216,6 +216,11 @@ fill_stats:
   STA player+ACT_HP
   LDA player+ACT_MANAMAX
   STA player+ACT_MANA
+  ;set player's position to middle of the screen
+  LDA #96
+  STA player+ACT_Y
+  LDA #128
+  STA player+ACT_X
   
   LDA #1
   STA readout_update_req

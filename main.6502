@@ -67,7 +67,12 @@ MODE_DEATH = 3
     player_floor .dsb 1
     player_money .dsb 1
     player_jewels .dsb 1
+    
     enemies_in_room .dsb 1
+    actor_data_pointer .dsb 1
+    actor_sprite_pointer .dsb 1
+    actor_sprite_rom_pointer .dsb 1
+    
     .incsrc "src/actor_vars.6502"
     
     readout_update_req .dsb 1
