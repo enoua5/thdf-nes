@@ -328,10 +328,9 @@ draw_fireball:
   STA generic_bytes+3
   
   LDX actor_sprite_pointer
-  ;LDA $0200+ACT_SPRITE_FIRE+SPRITE_DATA_A,X
-  ;AND #%00111111
-  ;ORA generic_bytes+3
-  LDA generic_bytes+3
+  LDA $0200+ACT_SPRITE_FIRE+SPRITE_DATA_A,X
+  AND #%00111111
+  ORA generic_bytes+3
   STA $0200+ACT_SPRITE_FIRE+SPRITE_DATA_A,X
   
   RTS
