@@ -28,6 +28,7 @@ draw_room:
     CMP #1
     BNE +
       JSR fill_walls
+      JSR fill_enemy_stats
       
       INC room_update_req
       RTS
@@ -43,6 +44,10 @@ draw_room:
     LDA #0
     STA room_update_req
   ++:
+  
+  RTS
+  
+fill_enemy_stats:
   
   RTS
   
