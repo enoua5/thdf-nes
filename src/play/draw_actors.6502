@@ -93,7 +93,7 @@ draw_spec_actor:
     LDA #1
     JMP ++
   +:
-    LDA #0
+  ;  LDA #0
   ++:
     STA actors+ACT_READOUT_TIMER,X
   
@@ -337,18 +337,193 @@ draw_fireball:
   
 check_if_draw_readout:
   LDX actor_data_pointer
-  LDA actors+ACT_READOUT_VALUE
+  LDA actors+ACT_READOUT_TIMER,X
   BEQ +
     ; yes digit display
+    JSR set_readout_digs
+    JSR set_readout_color
+    JSR set_readout_y
+    JSR set_readout_x
+    
     
     JMP ++
   +:
     ; no digit display
     LDX actor_sprite_pointer
     LDA #$FF
+    STA $0200+ACT_SPRITE_DIG0+SPRITE_DATA_Y,X
     STA $0200+ACT_SPRITE_DIG1+SPRITE_DATA_Y,X
     STA $0200+ACT_SPRITE_DIG2+SPRITE_DATA_Y,X
-    STA $0200+ACT_SPRITE_DIG3+SPRITE_DATA_Y,X
   ++:
+  
+  RTS
+  
+num_digs .equ generic_bytes+20
+px .equ generic_bytes+30
+set_readout_digs:
+  ;figure out how many digits we need
+  LDX actor_data_pointer
+  LDA actors+ACT_READOUT_VALUE,X
+  STA byte_to_dec_in
+  BNE + ; "miss"
+    LDA #2
+    STA num_digs
+    JMP ++
+  +:
+  
+  CMP #9
+  BCS +
+    LDA #1
+    STA num_digs
+    JMP ++
+  +:
+  
+  CMP #99
+  BCS +
+    LDA #2
+    STA num_digs
+    JMP ++
+  +:
+  
+  ;BNE +
+    LDA #3
+    STA num_digs
+    ;JMP ++
+  ++:
+  
+  JSR byte_to_dec
+  
+  LDX actor_data_pointer
+  LDA actors+ACT_READOUT_VALUE,X
+  BNE +
+    LDX actor_sprite_pointer
+    
+    LDA #$0A
+    STA $0200+ACT_SPRITE_DIG1+SPRITE_DATA_I,X
+    
+    LDA #$0B
+    STA $0200+ACT_SPRITE_DIG2+SPRITE_DATA_I,X
+    
+    JMP ++
+  +:
+  
+    LDX actor_sprite_pointer
+    
+    LDA byte_to_dec_out+2
+    STA $0200+ACT_SPRITE_DIG2+SPRITE_DATA_I,X
+    
+    LDA byte_to_dec_out+1
+    STA $0200+ACT_SPRITE_DIG1+SPRITE_DATA_I,X
+    
+    LDA byte_to_dec_out+0
+    STA $0200+ACT_SPRITE_DIG0+SPRITE_DATA_I,X
+    
+  ++:
+  
+  RTS
+set_readout_color:
+  LDX actor_data_pointer
+  LDA actors+ACT_READOUT_VALUE,X
+  BNE +
+    ; color blue for miss
+    LDA #%00000010
+    JMP ++
+  +:
+    ; color red for damage
+    LDA #%00000011
+  ++:
+  
+  LDX actor_sprite_pointer
+  STA $0200+ACT_SPRITE_DIG0+SPRITE_DATA_A,X
+  STA $0200+ACT_SPRITE_DIG1+SPRITE_DATA_A,X
+  STA $0200+ACT_SPRITE_DIG2+SPRITE_DATA_A,X
+  
+  RTS
+set_readout_y:
+  LDX actor_data_pointer
+  LDA actors+ACT_Y,X
+  SEC
+  SBC #21
+  
+  LDY actor_sprite_pointer
+  CLC
+  LDX num_digs
+  BNE +
+    LDA #$80
+  +:
+  STA $0200+ACT_SPRITE_DIG2+SPRITE_DATA_Y,Y
+  CLC
+  DEX
+  BNE +
+    LDA #$90
+  +:
+  STA $0200+ACT_SPRITE_DIG1+SPRITE_DATA_Y,Y
+  CLC
+  DEX
+  BNE +
+    LDA #$a0
+  +:
+  STA $0200+ACT_SPRITE_DIG0+SPRITE_DATA_Y,Y
+
+  RTS
+set_readout_x:
+  LDX actor_data_pointer
+  LDA actors+ACT_X,X
+  STA px
+
+  LDA num_digs
+  CMP #3
+  BNE + ;3 digits
+    LDA #3
+    STA num_digs+1
+  
+    LDX actor_sprite_pointer
+    LDA px
+    SEC
+    SBC #12
+    
+    STA $0200+ACT_SPRITE_DIG0+SPRITE_DATA_X,X
+    
+    CLC
+    ADC #8
+    STA $0200+ACT_SPRITE_DIG1+SPRITE_DATA_X,X
+    
+    CLC
+    ADC #8
+    STA $0200+ACT_SPRITE_DIG2+SPRITE_DATA_X,X
+  
+    JMP end_readout_x
+  +:
+  CMP #2
+  BNE + ;2 digits
+    LDA #2
+    STA num_digs+1
+    
+    LDX actor_sprite_pointer
+    LDA px
+    SEC
+    SBC #8
+    
+    STA $0200+ACT_SPRITE_DIG1+SPRITE_DATA_X,X
+    
+    CLC
+    ADC #8
+    STA $0200+ACT_SPRITE_DIG2+SPRITE_DATA_X,X
+    
+    JMP end_readout_x
+  +:
+  CMP #1
+  BNE end_readout_x ;1 digit
+    LDA #1
+    STA num_digs+1
+    
+    LDX actor_sprite_pointer
+    LDA px
+    SEC
+    SBC #4
+    
+    STA $0200+ACT_SPRITE_DIG2+SPRITE_DATA_X,X
+  end_readout_x:
+  
   
   RTS
