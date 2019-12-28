@@ -61,42 +61,6 @@ draw_spec_actor:
   JSR draw_fireball
   JSR check_if_draw_readout
   
-  ;TEST CODE
-  LDA #1
-  LDX actor_data_pointer
-  CLC
-  ADC actors+ACT_Y,X
-  STA actors+ACT_Y,X
-  STA actors+ACT_FIRE_Y,X
-  STA actors+ACT_FIRE_X,X
-  
-  ; TEST CODE
-  LDX actor_data_pointer
-  LDA #1
-  CLC
-  ADC actors+ACT_ANIM_TIMER,X
-  STA actors+ACT_ANIM_TIMER,X
-  STA actors+ACT_FIRE_ANIM_TIMER,X
-  
-  JSR rng
-  LDX actor_data_pointer
-  LDA rng_seed
-  AND #%00001111
-  BNE +
-    INC actors+ACT_READOUT_VALUE,X
-  +:
-  JSR rng
-  LDX actor_data_pointer
-  LDA rng_seed
-  AND #%00001111
-  BEQ +
-    LDA #1
-    JMP ++
-  +:
-  ;  LDA #0
-  ++:
-    STA actors+ACT_READOUT_TIMER,X
-  
   RTS
   
 draw_body:
