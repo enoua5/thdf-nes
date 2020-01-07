@@ -48,6 +48,47 @@ draw_room:
   RTS
   
 fill_enemy_stats:
+  LDX player_room
+  LDA dungeon_map, X
+  AND #%11110000 ; we only care about the enemies
+  CLC
+  ROR
+  ROR
+  ROR
+  ROR
+  STA enemies_in_room
+  LDA player_room
+  CMP boss_room
+  BNE +
+    LDA enemies_in_room
+    ORA #%00010000
+    STA enemies_in_room
+  +:
+  
+  LDA #ACTOR_DATA_LENGTH ; don't load player stats
+  STA actor_data_pointer
+  
+  -:
+    ; skip to the next one if the enemy isn't in the room
+    LDA enemies_in_room
+    AND #%00000001
+    CMP #0
+    BEQ +
+      LDA #128
+      STA generic_bytes+16 ; x
+      STA generic_bytes+17 ; y
+      JSR spawn_actor
+    +:
+      ;move pointer to next
+      LDA #ACTOR_DATA_LENGTH
+      CLC
+      ADC actor_data_pointer
+      STA actor_data_pointer
+
+      ROR enemies_in_room
+  LDA enemies_in_room
+  CMP #0
+  BNE -
   
   RTS
   
