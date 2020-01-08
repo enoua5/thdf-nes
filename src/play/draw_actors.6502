@@ -28,7 +28,7 @@ draw_actors:
   STA actor_sprite_rom_pointer
   
   LDA #0 
-  STA generic_bytes+#$45 ;TEST
+  STA generic_bytes+#$45 ;TEST do not leave as magic number
   
   JMP +skip_enemy_in_room_check ; player is always in the room
   
@@ -41,7 +41,7 @@ draw_actors:
       CLC
       ROR enemies_in_room
     +skip_enemy_in_room_check:
-      LDA #$8f ;even more TEST
+      LDA actor_sprite_rom_pointer ;even more TEST
       LDX generic_bytes+#$45
       STA generic_bytes+#$f0,X
     
@@ -51,7 +51,7 @@ draw_actors:
       CLC
       ROR enemies_in_room
       
-      LDA #$f8 ;even more TEST
+      LDA #0 ;even more TEST
       LDX generic_bytes+#$45
       STA generic_bytes+#$f0,X
       
@@ -91,7 +91,7 @@ hide_actor_sprites:
   STA generic_bytes+#$f8
   ;
 
-  LDX actor_sprite_rom_pointer
+  LDX actor_sprite_pointer
   
   LDA #$00
   STA $0200+ACT_SPRITE_HEAD+SPRITE_DATA_X,X
