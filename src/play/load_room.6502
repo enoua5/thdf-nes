@@ -68,6 +68,8 @@ fill_enemy_stats:
   LDA #ACTOR_DATA_LENGTH ; don't load player stats
   STA actor_data_pointer
   
+  LDA #100
+  STA generic_bytes+16
   -:
     ; skip to the next one if the enemy isn't in the room
     LDA enemies_in_room
@@ -75,15 +77,22 @@ fill_enemy_stats:
     CMP #0
     BEQ +
       LDA #128
-      STA generic_bytes+16 ; x
       STA generic_bytes+17 ; y
-      JSR spawn_actor
+      
+      
+      ;JSR spawn_actor
     +:
+      JSR spawn_actor ;TEST
       ;move pointer to next
       LDA #ACTOR_DATA_LENGTH
       CLC
       ADC actor_data_pointer
       STA actor_data_pointer
+      
+      LDA #10
+      CLC
+      ADC generic_bytes+16
+      STA generic_bytes+16 ; x
 
       ROR enemies_in_room
   LDA enemies_in_room

@@ -16,13 +16,21 @@ draw_actors:
     STA enemies_in_room
   +:
   
+  ;TEST CODE
+  LDA enemies_in_room
+  STA generic_bytes+#$f9
+  ;
+  
   LDA #0
   STA actor_data_pointer
   STA actor_sprite_pointer
-  LDA #$10
+  LDA #$10 ; actor sprites start at $10 in chrrom
   STA actor_sprite_rom_pointer
   
-  JMP skip_enemy_in_room_check ; player is always in the room
+  LDA #0 
+  STA generic_bytes+#$45 ;TEST
+  
+  JMP +skip_enemy_in_room_check ; player is always in the room
   
   -:
     ; skip to the next one if the enemy isn't in the room
@@ -30,12 +38,25 @@ draw_actors:
     AND #%00000001
     CMP #0
     BEQ +
-    skip_enemy_in_room_check:
+      CLC
+      ROR enemies_in_room
+    +skip_enemy_in_room_check:
+      LDA #$8f ;even more TEST
+      LDX generic_bytes+#$45
+      STA generic_bytes+#$f0,X
+    
       JSR draw_spec_actor
       JMP ++
     +:
+      CLC
+      ROR enemies_in_room
+      
+      LDA #$f8 ;even more TEST
+      LDX generic_bytes+#$45
+      STA generic_bytes+#$f0,X
+      
       JSR hide_actor_sprites
-    ++
+    ++:
       ;move pointers to next
       LDA #ACT_SPRITE_DATA_LENGTH
       CLC
@@ -51,16 +72,25 @@ draw_actors:
       CLC
       ADC actor_sprite_rom_pointer
       STA actor_sprite_rom_pointer
-      CLC
-      ROR enemies_in_room
-  LDA enemies_in_room
-  CMP #0
+  LDA generic_bytes+#$45
+  CLC
+  ADC #1
+  STA generic_bytes+#$45
+  CMP #6 ; number of enemies. TEST CODE; DO NOT LEAVE AS MAGIC NUMBER
+  
   BNE -
   
   RTS
   
   
 hide_actor_sprites:
+  ;TEST
+  LDA generic_bytes+#$f8
+  CLC
+  ADC #1
+  STA generic_bytes+#$f8
+  ;
+
   LDX actor_sprite_rom_pointer
   
   LDA #$00
@@ -85,6 +115,14 @@ hide_actor_sprites:
   RTS
 
 draw_spec_actor:
+  ;TEST
+  LDA generic_bytes+#$f7
+  CLC
+  ADC #1
+  STA generic_bytes+#$f7
+  ;
+
+
   JSR draw_body
   JSR draw_fireball
   JSR check_if_draw_readout
