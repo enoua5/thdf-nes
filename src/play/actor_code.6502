@@ -17,5 +17,40 @@ ACT_NUM_FRAMES .equ 7
 
 actor_tick:
   RTS
+
+spawn_actor:
+  ;uses generic bytes 16 and 17 to set x and y
+  LDX actor_data_pointer
   
+  LDA actors+ACT_HPMAX,X
+  STA actors+ACT_HP,X
+  
+  LDA actors+ACT_MANAMAX,X
+  STA actors+ACT_MANA,X
+  
+  LDA generic_bytes+16
+  STA actors+ACT_X,X
+  
+  LDA generic_bytes+17
+  STA actors+ACT_Y,X
+  
+  LDA #$ff
+  STA actors+ACT_FIRE_Y,X
+  
+  
+  LDA #0
+  STA actors+ACT_ATTKTIME,X
+  STA actors+ACT_ANIM_TIMER,X
+  STA actors+ACT_FACE,X
+  STA actors+ACT_FIRE_FACE,X
+  STA actors+ACT_FIRE_X,X
+  STA actors+ACT_FIRE_XVEL,X
+  STA actors+ACT_FIRE_YVEL,X
+  STA actors+ACT_FIRE_ANIM_TIMER,X
+  STA actors+ACT_READOUT_TIMER,X
+  STA actors+ACT_READOUT_VALUE,X
+  
+  RTS
+  
+
   .incsrc "src/play/draw_actors.6502"
