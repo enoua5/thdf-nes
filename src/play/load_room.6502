@@ -80,9 +80,8 @@ fill_enemy_stats:
       STA generic_bytes+17 ; y
       
       
-      ;JSR spawn_actor
+      JSR spawn_actor
     +:
-      JSR spawn_actor ;TEST
       ;move pointer to next
       LDA #ACTOR_DATA_LENGTH
       CLC
