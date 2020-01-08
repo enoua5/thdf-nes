@@ -1,5 +1,6 @@
 NUMBER_OF_ACTORS .equ #6
 
+_enemy_loop_counter .equ generic_bytes+#$45
 draw_actors:
   LDX player_room
   LDA dungeon_map, X
@@ -25,7 +26,7 @@ draw_actors:
   STA actor_sprite_rom_pointer
   
   LDA #0 
-  STA generic_bytes+#$45 ;counter for the enemy loop
+  STA _enemy_loop_counter
   
   JMP +skip_enemy_in_room_check ; player is always in the room
   
@@ -61,10 +62,10 @@ draw_actors:
       CLC
       ADC actor_sprite_rom_pointer
       STA actor_sprite_rom_pointer
-  LDA generic_bytes+#$45
+  LDA _enemy_loop_counter
   CLC
   ADC #1
-  STA generic_bytes+#$45
+  STA _enemy_loop_counter
   CMP NUMBER_OF_ACTORS
   
   BNE -
