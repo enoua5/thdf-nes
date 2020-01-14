@@ -1,6 +1,3 @@
-NUMBER_OF_ACTORS .equ #6
-
-_enemy_loop_counter .equ generic_bytes+#$45
 draw_actors:
   LDX player_room
   LDA dungeon_map, X

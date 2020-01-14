@@ -16,7 +16,78 @@ ACT_SPRITE_DATA_LENGTH .equ 32 ; each sprite is 4 bytes
 ACT_NUM_FRAMES .equ 7
 
 actor_tick:
+  LDX player_room
+  LDA dungeon_map, X
+  AND #%11110000 ; we only care about the enemies
+  CLC
+  ROR
+  ROR
+  ROR
+  ROR
+  STA enemies_in_room
+  LDA player_room
+  CMP boss_room
+  BNE +
+    LDA enemies_in_room
+    ORA #%00010000
+    STA enemies_in_room
+  +:
+  
+  LDA #0
+  STA actor_data_pointer
+  STA _enemy_loop_counter
+  
+  ; load in controller player choices
+  ; some weird stuff because some buttons are on_down, others are held
+  LDA buttons
+  AND #$0F ; just the d-pad
+  TAX
+  LDA button_ondown
+  AND #$F0 ; the action buttons
+  STA generic_bytes+12
+  TXA
+  ORA generic_bytes+12
+  STA actor_control
+  
+  
+  
+  
+  JMP +skip_enemy_in_room_check ; player is always in the room
+  
+  -:
+    LDA enemies_in_room
+    AND #%00000001
+    CMP #0
+    BEQ +
+      JSR run_ai
+      +skip_enemy_in_room_check:
+      JSR indv_actor_tick
+    +:
+    
+    CLC
+    ROR enemies_in_room
+    
+    LDA #ACTOR_DATA_LENGTH
+    CLC
+    ADC actor_data_pointer
+    STA actor_data_pointer
+  LDA _enemy_loop_counter
+  CLC
+  ADC #1
+  STA _enemy_loop_counter
+  CMP NUMBER_OF_ACTORS
+  BNE -
+  
+  
   RTS
+
+run_ai:
+  RTS
+
+indv_actor_tick: ; I'm sorry for my inconsistant naming conventions
+                 ; (not sorry enough to do something about it though)
+  RTS
+
 
 spawn_actor:
   ;uses generic bytes 16 and 17 to set x and y

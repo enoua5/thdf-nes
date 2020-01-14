@@ -72,6 +72,7 @@ MODE_DEATH = 3
     actor_data_pointer .dsb 1
     actor_sprite_pointer .dsb 1
     actor_sprite_rom_pointer .dsb 1
+    actor_control .dsb 1
     
     .incsrc "src/actor_vars.6502"
     
@@ -204,7 +205,10 @@ Reset:
       LDA #1
       STA waiting_for_frame
       
+      LDA #0
+      STA 255
       -:
+        
         LDA waiting_for_frame
         CMP #0
       BNE -
@@ -215,6 +219,11 @@ NMI:
   STA register_backup
   STX register_backup+1
   STY register_backup+2
+  
+  LDA 255
+  CLC
+  ADC #1
+  STA 255
   
   LDA #0
   STA $2001
