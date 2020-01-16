@@ -13,6 +13,8 @@ play_code:
     JSR actor_tick
     JSR draw_actors
     
+    JSR check_room_move
+    
     JMP ++
   +:
     LDA ppu_mask
@@ -30,3 +32,75 @@ play_code:
       STA ppu_mask
   ++:
   RTS
+
+check_room_move:
+
+  LDA actors+ACT_X
+  CMP #8
+  BCS +
+    LDA #240
+    STA actors+ACT_X
+    
+    CLC
+    DEC player_room
+    
+    LDA #1
+    STA room_update_req
+  +:
+  
+  LDA actors+ACT_X
+  CMP #248
+  BCC +
+    LDA #16
+    STA actors+ACT_X
+    
+    CLC
+    INC player_room
+    
+    LDA #1
+    STA room_update_req
+  +:
+  
+  LDA actors+ACT_Y
+  CMP #8
+  BCS +
+    LDA #170
+    STA actors+ACT_Y
+    
+    LDA player_room
+    CLC
+    ADC #$10
+    STA player_room
+    
+    LDA #1
+    STA room_update_req
+  +:
+  
+  LDA actors+ACT_Y
+  CMP #178
+  BCC +
+    LDA #16
+    STA actors+ACT_Y
+    
+    LDA player_room
+    SEC
+    SBC #$10
+    STA player_room
+    
+    LDA #1
+    STA room_update_req
+  +:
+  
+  
+  RTS
+
+
+
+
+
+
+
+
+
+
+
