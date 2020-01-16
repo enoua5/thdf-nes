@@ -6,9 +6,27 @@ NUMBER_OF_ACTORS .equ #6
 .incsrc "src/play/actor_code.6502"
 
 play_code:
-  JSR update_stat_readout
-  JSR draw_room
-  JSR actor_tick
-  JSR draw_actors
+  LDA paused
+  BNE +
+    JSR update_stat_readout
+    JSR draw_room
+    JSR actor_tick
+    JSR draw_actors
+    
+    JMP ++
+  +:
+    LDA ppu_mask
+    ORA #%00000001 ; grey-scale to indicate paused
+    STA ppu_mask
   
+    LDA button_ondown
+    AND START_BUTTON
+    BEQ ++
+      LDA #0
+      STA paused
+      
+      LDA ppu_mask
+      AND #%11111110 ; undo grey-scale
+      STA ppu_mask
+  ++:
   RTS

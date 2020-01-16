@@ -25,6 +25,7 @@ MODE_DEATH = 3
     rng_seed .dsb 2
     buttons .dsb 1
     button_ondown .dsb 1
+    paused .dsb 1
     generic_pointer .dsb 2  
     draw_req .dsb 1
     register_backup .dsb 3

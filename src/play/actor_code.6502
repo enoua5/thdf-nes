@@ -138,7 +138,21 @@ indv_actor_tick: ; I'm sorry for my inconsistant naming conventions
     INC actors+ACT_ANIM_TIMER,X
 
   +no_movement:
+  
   LDA actor_control ; reload actor_control because we messed with it
+  AND START_BUTTON
+  BEQ +
+    ; pause the game
+    LDA #1
+    STA paused
+    
+    ; clear the start button so it doesn't instantly unpause
+    LDA START_BUTTON
+    EOR #$FF
+    AND button_ondown
+    STA button_ondown
+  +:
+  
   
   
   RTS
