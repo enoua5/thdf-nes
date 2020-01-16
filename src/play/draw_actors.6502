@@ -369,7 +369,7 @@ set_readout_digs:
   ;figure out how many digits we need
   LDX actor_data_pointer
   LDA actors+ACT_READOUT_VALUE,X
-  STA byte_to_dec_in
+  STA arguments
   BNE + ; "miss"
     LDA #2
     STA num_digs
@@ -414,13 +414,13 @@ set_readout_digs:
   
     LDX actor_sprite_pointer
     
-    LDA byte_to_dec_out+2
+    LDA returns+2
     STA $0200+ACT_SPRITE_DIG2+SPRITE_DATA_I,X
     
-    LDA byte_to_dec_out+1
+    LDA returns+1
     STA $0200+ACT_SPRITE_DIG1+SPRITE_DATA_I,X
     
-    LDA byte_to_dec_out+0
+    LDA returns+0
     STA $0200+ACT_SPRITE_DIG0+SPRITE_DATA_I,X
     
   ++:

@@ -121,7 +121,7 @@ _end_nt_buffer_write:
   RTS
   
 byte_to_dec:
-  LDA byte_to_dec_in
+  LDA arguments
   
   ;100's place
   LDX #0
@@ -133,7 +133,7 @@ byte_to_dec:
       SBC #100
     JMP -
   +:
-  STX byte_to_dec_out+0
+  STX returns+0
   
   ;10's place
   LDX #0
@@ -145,9 +145,23 @@ byte_to_dec:
       SBC #10
     JMP -
   +:
-  STX byte_to_dec_out+1
+  STX returns+1
   
   ;1's place
-  STA byte_to_dec_out+2
+  STA returns+2
+  
+  RTS
+  
+get_tile_under_point:
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
   
   RTS

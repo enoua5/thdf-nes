@@ -29,8 +29,8 @@ MODE_DEATH = 3
     generic_pointer .dsb 2  
     draw_req .dsb 1
     register_backup .dsb 3
-    byte_to_dec_in .dsb 1
-    byte_to_dec_out .dsb 3
+    arguments .dsb 4
+    returns .dsb 4
     nt_buf_in_hi .dsb 1
     nt_buf_in_lo .dsb 1
     nt_buf_in_dt .dsb 1

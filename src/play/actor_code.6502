@@ -62,10 +62,12 @@ actor_tick:
       JSR run_ai
       +skip_enemy_in_room_check:
       JSR indv_actor_tick
+      JMP ++
     +:
     
-    CLC
-    ROR enemies_in_room
+      CLC
+      ROR enemies_in_room
+    ++:
     
     LDA #ACTOR_DATA_LENGTH
     CLC
@@ -152,8 +154,6 @@ indv_actor_tick: ; I'm sorry for my inconsistant naming conventions
     AND button_ondown
     STA button_ondown
   +:
-  
-  
   
   RTS
 
