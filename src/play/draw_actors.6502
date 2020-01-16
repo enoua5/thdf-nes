@@ -141,8 +141,9 @@ draw_body:
     LDX actor_data_pointer
     LDA actors+ACT_ANIM_TIMER,X
     
-    AND #%00010000
+    AND #%00001000
     CLC
+    ROL
     ROL
     ROL
     
@@ -181,8 +182,9 @@ draw_body:
     LDX actor_data_pointer
     LDA actors+ACT_ANIM_TIMER,X
     
-    AND #%00010000
+    AND #%00001000
     CLC
+    ROL
     ROL
     ROL
     
@@ -238,8 +240,9 @@ draw_body:
     shared_lr_stepside_rendering:
     LDX actor_data_pointer
     LDA actors+ACT_ANIM_TIMER,X
-    AND #%00010000
+    AND #%00001000
     CLC
+    ROL
     ROL
     ROL
     ROL

@@ -82,10 +82,65 @@ actor_tick:
   RTS
 
 run_ai:
+  LDA #0
+  STA actor_control
   RTS
 
 indv_actor_tick: ; I'm sorry for my inconsistant naming conventions
                  ; (not sorry enough to do something about it though)
+  LDA actor_control
+  LDX actor_data_pointer
+  
+  ; walking stuffs
+  AND #$0F ; ignore everything but d-pad
+  BEQ +no_movement
+    AND RIGHT_BUTTON
+    BEQ +
+      LDA #2
+      STA actors+ACT_FACE,X
+      
+      CLC
+      INC actors+ACT_X,X
+    +:
+    
+    LDA actor_control
+    AND LEFT_BUTTON
+    BEQ +
+      LDA #3
+      STA actors+ACT_FACE,X
+      
+      CLC
+      DEC actors+ACT_X,X
+    +:
+    
+    LDA actor_control
+    AND UP_BUTTON
+    BEQ +
+      LDA #1
+      STA actors+ACT_FACE,X
+      
+      CLC
+      DEC actors+ACT_Y,X
+    +:
+    
+    LDA actor_control
+    AND DOWN_BUTTON
+    BEQ +
+      LDA #0
+      STA actors+ACT_FACE,X
+      
+      CLC
+      INC actors+ACT_Y,X
+    +:
+  
+      
+    CLC
+    INC actors+ACT_ANIM_TIMER,X
+
+  +no_movement:
+  LDA actor_control ; reload actor_control because we messed with it
+  
+  
   RTS
 
 
