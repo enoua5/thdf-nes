@@ -20,7 +20,7 @@
     LDA $4016
     LSR a ; b0 -> carry
     ROL buttons ; carry -> b0 
-    bcc @readpad
+    BCC @readpad
   
   LDA button_ondown
   EOR buttons ;detect edges from this frame to last

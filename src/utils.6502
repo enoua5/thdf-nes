@@ -153,7 +153,14 @@ byte_to_dec:
   RTS
   
 get_tile_under_point:
+  LDA arguments+0 ; x-pos
+  CLC
+  ROR
+  ROR
+  ROR ; ROR 3 times to divide by 8
+  STA arguments+1
   
+  LDA 
   
   
   

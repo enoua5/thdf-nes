@@ -2,11 +2,10 @@ draw_actors:
   LDX player_room
   LDA dungeon_map, X
   AND #%11110000 ; we only care about the enemies
-  CLC
-  ROR
-  ROR
-  ROR
-  ROR
+  LSR
+  LSR
+  LSR
+  LSR
   STA enemies_in_room
   LDA player_room
   CMP boss_room
@@ -33,14 +32,12 @@ draw_actors:
     AND #%00000001
     CMP #0
     BEQ +
-      CLC
-      ROR enemies_in_room
+      LSR enemies_in_room
     +skip_enemy_in_room_check:
       JSR draw_spec_actor
       JMP ++
     +:
-      CLC
-      ROR enemies_in_room
+      LSR enemies_in_room
       
       JSR hide_actor_sprites
     ++:
@@ -142,10 +139,9 @@ draw_body:
     LDA actors+ACT_ANIM_TIMER,X
     
     AND #%00001000
-    CLC
-    ROL
-    ROL
-    ROL
+    ASL
+    ASL
+    ASL
     
     STA generic_bytes
     
@@ -183,10 +179,9 @@ draw_body:
     LDA actors+ACT_ANIM_TIMER,X
     
     AND #%00001000
-    CLC
-    ROL
-    ROL
-    ROL
+    ASL
+    ASL
+    ASL
     
     STA generic_bytes
     
@@ -241,12 +236,11 @@ draw_body:
     LDX actor_data_pointer
     LDA actors+ACT_ANIM_TIMER,X
     AND #%00001000
-    CLC
-    ROL
-    ROL
-    ROL
-    ROL
-    ROL
+    ASL
+    ASL
+    ASL
+    ASL
+    ASL
     ADC #2
     STA generic_bytes
     
@@ -294,22 +288,20 @@ draw_fireball:
   LDX actor_data_pointer
   LDA actors+ACT_FIRE_FACE,X
   AND #%00000001 ; the last bit determines if the fire faces up|left
-  CLC
-  ROL ; move the bit to the Flip Horizontal position
-  ROL
-  ROL
-  ROL
-  ROL
-  ROL 
+  ASL ; move the bit to the Flip Horizontal position
+  ASL
+  ASL
+  ASL
+  ASL
+  ASL 
   STA generic_bytes+1
   
   LDX actor_data_pointer
   LDA actors+ACT_FIRE_ANIM_TIMER,X
   AND #%00010000
-  CLC
-  ROL ; move the bit to the Flip Vertical position
-  ROL
-  ROL
+  ASL ; move the bit to the Flip Vertical position
+  ASL
+  ASL
   STA generic_bytes+2
   
   LDA generic_bytes
@@ -317,13 +309,11 @@ draw_fireball:
   BEQ +
     ;swap which things controls which axis of reflection
     LDA generic_bytes+1
-    CLC
-    ROL
+    ASL
     STA generic_bytes+1
     
     LDA generic_bytes+2
-    CLC
-    ROR
+    LSR
     STA generic_bytes+2
   +:
   

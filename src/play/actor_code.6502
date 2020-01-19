@@ -20,11 +20,12 @@ actor_tick:
   LDA dungeon_map, X
   AND #%11110000 ; we only care about the enemies
   CLC
-  ROR
-  ROR
-  ROR
-  ROR
+  LSR
+  LSR
+  LSR
+  LSR
   STA enemies_in_room
+  
   LDA player_room
   CMP boss_room
   BNE +
