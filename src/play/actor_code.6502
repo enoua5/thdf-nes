@@ -156,6 +156,13 @@ indv_actor_tick: ; I'm sorry for my inconsistant naming conventions
     STA button_ondown
   +:
   
+  ;TEST
+  LDX actor_data_pointer
+  LDA actors+ACT_X,X
+  STA arguments+0
+  LDA actors+ACT_Y,X
+  STA arguments+1
+  JSR get_tile_under_point
   RTS
 
 
