@@ -162,6 +162,11 @@ fill_walls:
     JSR _write_to_nt_buffer
     JSR _write_to_nt_buffer
   end_nt_buffer_write
+  
+  TYA
+  SEC
+  SBC #$36 ; 0=wall, 1=floor; ie, 1=can go that way
+  STA can_move_up_room ; this is for the actor_tick subroutine
  
   ; check leftward
   LDY #$37 ;default fill (floor)
@@ -210,6 +215,11 @@ fill_walls:
     JSR _write_to_nt_buffer
     JSR _write_to_nt_buffer
   end_nt_buffer_write
+  
+  TYA
+  SEC
+  SBC #$36 ; 0=wall, 1=floor; ie, 1=can go that way
+  STA can_move_left_room ; this is for the actor_tick subroutine
  
   ; check rightward
   LDY #$37 ;default fill (floor)
@@ -258,6 +268,11 @@ fill_walls:
     JSR _write_to_nt_buffer
     JSR _write_to_nt_buffer
   end_nt_buffer_write
+  
+  TYA
+  SEC
+  SBC #$36 ; 0=wall, 1=floor; ie, 1=can go that way
+  STA can_move_right_room ; this is for the actor_tick subroutine
  
   ; check downward
   LDY #$37 ;default fill (floor)
@@ -300,6 +315,12 @@ fill_walls:
     JSR _write_to_nt_buffer
     JSR _write_to_nt_buffer
   end_nt_buffer_write
+  
+  TYA
+  SEC
+  SBC #$36 ; 0=wall, 1=floor; ie, 1=can go that way
+  STA can_move_down_room ; this is for the actor_tick subroutine
+  
   RTS
   
 draw_chest:

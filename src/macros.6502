@@ -119,3 +119,277 @@ MACRO fill_ind_stats dest, source
   LDA cc_stat_options+16, Y
   STA dest, X
 ENDM
+
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+; GAMEPLAY
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+MACRO move_actor
+  LDA actor_control
+  AND #$0F ; ignore everything but d-pad
+  BNE +yes_movement
+    JMP +no_movement
+  +yes_movement:
+    AND RIGHT_BUTTON
+    BEQ ++
+      LDA #2
+      STA actors+ACT_FACE,X
+      
+      move_actor_right_if_possible
+    ++:
+    
+    LDA actor_control
+    AND LEFT_BUTTON
+    BEQ ++
+      LDA #3
+      STA actors+ACT_FACE,X
+      
+      move_actor_left_if_possible
+    ++:
+    
+    LDA actor_control
+    AND UP_BUTTON
+    BEQ ++
+      LDA #1
+      STA actors+ACT_FACE,X
+      
+      move_actor_up_if_possible
+    ++:
+    
+    LDA actor_control
+    AND DOWN_BUTTON
+    BEQ ++
+      LDA #0
+      STA actors+ACT_FACE,X
+      
+      move_actor_down_if_possible
+    ++:
+  
+      
+    CLC
+    INC actors+ACT_ANIM_TIMER,X
+
+  +no_movement:
+ENDM
+
+TOP_WALL_HEIGHT .equ #32
+LEFT_WALL_WIDTH .equ #37
+RIGHT_WALL_WIDTH .equ #220
+BOTTOM_WALL_HEIGHT .equ #155
+TOP_DOOR_LEFT .equ #117
+TOP_DOOR_RIGHT .equ #140
+SIDE_DOOR_TOP .equ #80
+SIDE_DOOR_BOTTOM .equ #107
+
+MACRO move_actor_up_if_possible
+  ; TEST 1. COLLIDE WITH TOP WALL, MOVE THROUGH DOOR
+    LDA actors+ACT_Y,X
+    CMP TOP_WALL_HEIGHT
+    BCS + ; if actor is below wall; try different test
+    
+    CPX #0
+    BNE +do_not_move ; only the player can move through doors
+    
+    LDA can_move_up_room
+    BEQ +do_not_move ; if the door is closed, you can't pass it
+    
+    LDA actors+ACT_X,X
+    CMP TOP_DOOR_LEFT-1
+    BCC +do_not_move
+    CMP TOP_DOOR_RIGHT+1
+    BCS +do_not_move ;have to be in door to go through it
+    
+    JMP +do_move ; test passed, move up
+  
+  +:
+  ; TEST 2. TOP OF LEFT DOOR
+    LDA actors+ACT_X,X
+    CMP LEFT_WALL_WIDTH-1
+    BCS + ; actor is right of left wall; try different test
+  
+    LDA actors+ACT_Y,X
+    CMP SIDE_DOOR_TOP
+    BCS +do_move ; below top of door
+    
+    JMP +do_not_move ; test failed
+    
+  +:
+  ; TEST 3. TOP OF RIGHT DOOR
+    LDA actors+ACT_X,X
+    CMP RIGHT_WALL_WIDTH+1
+    BCC +do_move ; actor is not within any wall areas
+    
+    LDA actors+ACT_Y,X
+    CMP SIDE_DOOR_TOP
+    BCS +do_move
+    
+    JMP +do_not_move
+    
+  +do_move:
+    DEC actors+ACT_Y,X
+  +do_not_move:
+ENDM
+
+MACRO move_actor_down_if_possible
+  ; TEST 1. COLLIDE WITH BOTTOM WALL, MOVE THROUGH DOOR
+    LDA actors+ACT_Y,X
+    CMP BOTTOM_WALL_HEIGHT
+    BCC + ; if actor is above wall; try different test
+    
+    CPX #0
+    BNE +do_not_move ; only the player can move through doors
+    
+    LDA can_move_down_room
+    BEQ +do_not_move ; if the door is closed, you can't pass it
+    
+    LDA actors+ACT_X,X
+    CMP TOP_DOOR_LEFT-1 ; top because I suck at naming things
+    BCC +do_not_move
+    CMP TOP_DOOR_RIGHT+1
+    BCS +do_not_move ;have to be in door to go through it
+    
+    JMP +do_move ; test passed, move up
+  
+  +:
+  ; TEST 2. BOTTOM OF LEFT DOOR
+    LDA actors+ACT_X,X
+    CMP LEFT_WALL_WIDTH-1
+    BCS + ; actor is right of left wall; try different test
+  
+    LDA actors+ACT_Y,X
+    CMP SIDE_DOOR_BOTTOM
+    BCC +do_move ; above bottom of door
+    
+    JMP +do_not_move ; test failed
+    
+  +:
+  ; TEST 3. BOTTOM OF RIGHT DOOR
+    LDA actors+ACT_X,X
+    CMP RIGHT_WALL_WIDTH+1
+    BCC +do_move ; actor is not within any wall areas
+    
+    LDA actors+ACT_Y,X
+    CMP SIDE_DOOR_BOTTOM
+    BCC +do_move
+    
+    JMP +do_not_move
+    
+  +do_move:
+    INC actors+ACT_Y,X
+  +do_not_move:
+ENDM
+
+MACRO move_actor_left_if_possible
+  ; TEST 1. COLLIDE WITH LEFT WALL, MOVE THROUGH DOOR
+    LDA actors+ACT_X,X
+    CMP LEFT_WALL_WIDTH
+    BCS + ; if actor is right of wall; try different test
+    
+    CPX #0
+    BNE +do_not_move ; only the player can move through doors
+    
+    LDA can_move_left_room
+    BEQ +do_not_move ; if the door is closed, you can't pass it
+    
+    LDA actors+ACT_Y,X
+    CMP SIDE_DOOR_TOP-1
+    BCC +do_not_move
+    CMP SIDE_DOOR_BOTTOM+1
+    BCS +do_not_move ;have to be in door to go through it
+    
+    JMP +do_move ; test passed, move up
+  
+  +:
+  ; TEST 2. LEFT OF TOP DOOR
+    LDA actors+ACT_Y,X
+    CMP TOP_WALL_HEIGHT-1
+    BCS + ; actor is bellow top wall; try different test
+  
+    LDA actors+ACT_X,X
+    CMP TOP_DOOR_LEFT
+    BCS +do_move ; right of left of door
+    
+    JMP +do_not_move ; test failed
+    
+  +:
+  ; TEST 3. LEFT OF BOTTOM DOOR
+    LDA actors+ACT_Y,X
+    CMP BOTTOM_WALL_HEIGHT+1
+    BCC +do_move ; actor is not within any wall areas
+    
+    LDA actors+ACT_X,X
+    CMP TOP_DOOR_LEFT
+    BCS +do_move
+    
+    JMP +do_not_move
+    
+  +do_move:
+    DEC actors+ACT_X,X
+  +do_not_move:
+ENDM
+
+MACRO move_actor_right_if_possible
+  ; TEST 1. COLLIDE WITH RIGHT WALL, MOVE THROUGH DOOR
+    LDA actors+ACT_X,X
+    CMP RIGHT_WALL_WIDTH
+    BCC + ; if actor is left of wall; try different test
+    
+    CPX #0
+    BNE +do_not_move ; only the player can move through doors
+    
+    LDA can_move_right_room
+    BEQ +do_not_move ; if the door is closed, you can't pass it
+    
+    LDA actors+ACT_Y,X
+    CMP SIDE_DOOR_TOP-1
+    BCC +do_not_move
+    CMP SIDE_DOOR_BOTTOM+1
+    BCS +do_not_move ;have to be in door to go through it
+    
+    JMP +do_move ; test passed, move up
+  
+  +:
+  ; TEST 2. RIGHT OF TOP DOOR
+    LDA actors+ACT_Y,X
+    CMP TOP_WALL_HEIGHT-1
+    BCS + ; actor is bellow top wall; try different test
+  
+    LDA actors+ACT_X,X
+    CMP TOP_DOOR_RIGHT
+    BCC +do_move ; left of right of door
+    
+    JMP +do_not_move ; test failed
+    
+  +:
+  ; TEST 3. RIGHT OF BOTTOM DOOR
+    LDA actors+ACT_Y,X
+    CMP BOTTOM_WALL_HEIGHT+1
+    BCC +do_move ; actor is not within any wall areas
+    
+    LDA actors+ACT_X,X
+    CMP TOP_DOOR_RIGHT
+    BCC +do_move
+    
+    JMP +do_not_move
+    
+  +do_move:
+    INC actors+ACT_X,X
+  +do_not_move:
+ENDM
+
+MACRO test_pause
+  LDA actor_control
+  AND START_BUTTON
+  BEQ +
+    ; pause the game
+    LDA #1
+    STA paused
+    
+    ; clear the start button so it doesn't instantly unpause
+    LDA START_BUTTON
+    EOR #$FF
+    AND button_ondown
+    STA button_ondown
+  +:
+ENDM
