@@ -36,9 +36,14 @@ draw_room:
     
     CMP #2
     BNE +
-      JSR draw_chest
+      LDA #0
+      STA offerings+0
+      STA offerings+1
+      STA offerings+2; reset offerings
+    
       JSR draw_spirit
       JSR draw_fountain
+      JSR draw_chest
     +:
     
     LDA #0
@@ -330,9 +335,26 @@ draw_chest:
   LDA dungeon_map,X
   AND #%00000010
   CMP #0
-  BEQ +
+  BEQ ++
     LDY #$3C ;first tile of chest
-  +:
+    
+    ; get money ammount
+    JSR rng
+    LDA rng_seed+0
+    AND #$0f ; 0-15. will be interpreted as 1-16
+    STA generic_bytes+103
+    ; do it again, keep lower of the two values
+    JSR rng
+    LDA rng_seed+0
+    AND #$0f ; 0-15. will be interpreted as 1-16
+    ; check which is lower
+    CMP generic_bytes+103
+    BCC +
+      LDA generic_bytes+103
+    +:
+    ORA offerings+0
+    STA offerings+0
+  ++:
   
   STY generic_bytes+0
   begin_nt_buffer_write SCREEN_BOT, CHEST_L1
@@ -425,6 +447,39 @@ draw_spirit:
     
     ORA generic_bytes+2
     STA generic_bytes+1
+    
+    ; save the color as the offering type
+    LDA generic_bytes+2
+    ASL
+    ASL
+    ASL
+    ASL
+    ORA offerings+0
+    STA offerings+0
+    ; get offering amount and cost
+    JSR rng
+    LDA rng_seed
+    STA offerings+1 ; cost is not rolled with disadv
+    
+    AND #$0f ; 0-15. will be interpreted as 1-16
+    STA generic_bytes+103
+    ; do it again, keep lower of the two values
+    JSR rng
+    LDA rng_seed+0
+    AND #$0f ; 0-15. will be interpreted as 1-16
+    ; check which is lower
+    CMP generic_bytes+103
+    BCC +asdf
+      LDA generic_bytes+103
+    +asdf:
+    STA generic_bytes+103
+    
+    ;insert amount into offer
+    LDA offerings+1
+    AND #$f0
+    ORA generic_bytes+103
+    
+    STA offerings+1
   +:
   
   begin_nt_buffer_write ATTR_TABLE, SPIRIT_ATTR
@@ -576,6 +631,7 @@ draw_fountain:
     LDA rng_seed
     AND #%11000000
     STA generic_bytes+2
+    STA generic_bytes+105
     
     ;the fountain lays in the corners of 4 attr-table regions
     LDA generic_bytes+1
@@ -622,6 +678,47 @@ draw_fountain:
       write_to_nt_buffer generic_bytes+12
       write_to_nt_buffer generic_bytes+13
     end_nt_buffer_write
+    
+    ; save the color as the offering type
+    LDA generic_bytes+105
+    LSR
+    LSR
+    ORA offerings+0
+    STA offerings+0
+    ; get offering amount and cost
+    JSR rng
+    LDA rng_seed
+    STA offerings+2 ; cost is not rolled with disadv
+    
+    AND #$0f ; 0-15. will be interpreted as 1-16
+    STA generic_bytes+103
+    ; do it again, keep lower of the two values
+    JSR rng
+    LDA rng_seed+0
+    AND #$0f ; 0-15. will be interpreted as 1-16
+    ; check which is lower
+    CMP generic_bytes+103
+    BCC +asdf
+      LDA generic_bytes+103
+    +asdf:
+    STA generic_bytes+103
+    
+    ; max magic uses upgrades slower
+    LDA generic_bytes+105
+    CMP #%00100000
+    BNE +aaaa
+      LDA generic_bytes+103
+      AND #%00000001
+      STA generic_bytes+103
+    +aaaa:
+    
+    
+    ;insert amount into offer
+    LDA offerings+2
+    AND #$f0
+    ORA generic_bytes+103
+    
+    STA offerings+2
     
     JMP ++
   +:

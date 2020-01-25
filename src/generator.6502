@@ -47,7 +47,7 @@ gen_room_feats:
   +:
   ;treasure
   JSR rng
-  AND #%00000001
+  AND #%00000011
   CMP #0
   BNE +
     LDX gen_working_room

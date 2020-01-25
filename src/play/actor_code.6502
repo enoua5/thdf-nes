@@ -85,7 +85,7 @@ actor_tick:
   RTS
 
 run_ai:
-  LDA UP_BUTTON
+  LDA #0
   STA actor_control
   RTS
 

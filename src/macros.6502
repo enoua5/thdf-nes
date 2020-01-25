@@ -125,6 +125,42 @@ ENDM
 ; GAMEPLAY
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
+MACRO make_offer
+
+  check_onChest
+  BEQ +
+  
+    JMP +offer_made
+  +:
+  
+  check_onFountain
+  BEQ +
+  
+    JMP +offer_made
+  +:
+  
+  
+  check_onGhost
+  BEQ +
+  
+    JMP +offer_made
+  +:
+  
+  +offer_made:
+ENDM
+
+MACRO check_onChest
+
+ENDM
+
+MACRO check_onFountain
+
+ENDM
+
+MACRO check_onGhost
+
+ENDM
+
 MACRO move_actor
   LDA actor_control
   AND #$0F ; ignore everything but d-pad

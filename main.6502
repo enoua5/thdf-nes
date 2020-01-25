@@ -84,6 +84,29 @@ MODE_DEATH = 3
     can_move_left_room .dsb 1
     can_move_right_room .dsb 1
     can_move_down_room .dsb 1
+    
+                     ; +0         +1        +2
+    offerings .dsb 3 ; 00|00|0000 0000|0000 0000|0000
+                     ; +0[0-1] Spirit resource. 00: gems, 01: healing, 10: mana, 11: agility
+                     ; +0[2-3] Fountain resource. 00: defence, 01: strength, 10: max magic, 11: max hp
+                     ; +0[4-7] Chest ammount
+                     ;
+                     ; +1[0-3] Spirit offer cost
+                     ; +1[4-7] Spirit offer amount
+                     ;
+                     ; +2[0-3] Fountain offer
+                     ; +2[4-7] Fountain offer amount cost
+    current_offer_amounts .dsb 1 ; [0-3] cost [4-7] amount
+    current_offer_type .dsb 1 ;    [4-6] 000 gems
+                              ;          001 healing
+                              ;          010 mana
+                              ;          011 agl
+                              ;          100 def
+                              ;          101 str
+                              ;          110 max mag
+                              ;          111 max mp
+                              ;    [7] 0: coin, 1: gem
+                     
   .ende
   
   .enum $0700
