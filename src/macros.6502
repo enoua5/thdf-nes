@@ -125,11 +125,32 @@ ENDM
 ; GAMEPLAY
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
+OFFER_SPRITE_OAM_LOCATION .equ #(48*4)
+STAT_HEART_X .equ #32
+STAT_HEART_MAX_X .equ #(32+48)
+STAT_MAGIC_X .equ #(32+(48*2))
+STAT_MAGIC_MAX_X .equ #(32+(48*3))
+STAT_STR_X .equ #32
+STAT_AGL_X .equ #(32+48)
+STAT_DEF_X .equ #(32+(48*2))
+STAT_COIN_X .equ #(32+(48*3))
+STAT_GEM_X .equ #(32+(48*4))
+STAT_TOP_ROW_Y .equ #200
+STAT_BOTTOM_ROW_Y .equ #216
 MACRO make_offer
-
+  LDA #0
+  STA current_offer_amounts
+  STA current_offer_type
+    
   check_onChest
   BEQ +
-  
+    LDA #%11000000
+    STA current_offer_type
+    
+    LDA offerings+0
+    AND #%00001111
+    STA current_offer_amounts
+    
     JMP +offer_made
   +:
   
@@ -142,22 +163,146 @@ MACRO make_offer
   
   check_onGhost
   BEQ +
+    LDA offerings+0 ; get the offer type from the room data
+    AND #%11000000
+    LSR
+    LSR
+    LSR
+    LSR
+    LSR ; move it to where it needs to be in current offer data
+    ORA #%01000000; add in other metadata
+    STA current_offer_type
+    
+    LDA offerings+1
+    STA current_offer_amounts
   
     JMP +offer_made
   +:
   
   +offer_made:
+  
+  LDA current_offer_type
+  AND #%01000000 ; make sure the offer exists
+  BEQ +
+    LDA current_offer_type
+    AND #%10000000 ; is it a free treasure?
+    BEQ +asdfasdf
+      LDA STAT_COIN_X
+      STA $0200+OFFER_SPRITE_OAM_LOCATION+SPRITE_DATA_X
+      CLC
+      ADC #8
+      STA $0200+OFFER_SPRITE_OAM_LOCATION+SPRITE_DATA_X+4
+      CLC
+      ADC #8
+      STA $0200+OFFER_SPRITE_OAM_LOCATION+SPRITE_DATA_X+8
+      
+      LDA STAT_BOTTOM_ROW_Y
+      STA $0200+OFFER_SPRITE_OAM_LOCATION+SPRITE_DATA_Y
+      STA $0200+OFFER_SPRITE_OAM_LOCATION+SPRITE_DATA_Y+4
+      STA $0200+OFFER_SPRITE_OAM_LOCATION+SPRITE_DATA_Y+8
+      
+      LDA #$FF
+      STA $0200+OFFER_SPRITE_OAM_LOCATION+SPRITE_DATA_Y+12
+      STA $0200+OFFER_SPRITE_OAM_LOCATION+SPRITE_DATA_Y+16
+      STA $0200+OFFER_SPRITE_OAM_LOCATION+SPRITE_DATA_Y+20
+    +asdfasdf:
+    
+    ; write values
+    LDA current_offer_amounts
+    AND #$0F
+    CLC
+    ADC #1
+    STA arguments+0
+    JSR byte_to_dec
+    LDA returns+1
+    STA $0200+OFFER_SPRITE_OAM_LOCATION+SPRITE_DATA_I+4
+    LDA returns+2
+    STA $0200+OFFER_SPRITE_OAM_LOCATION+SPRITE_DATA_I+8
+    
+    LDA current_offer_amounts
+    AND #$F0
+    LSR
+    LSR
+    LSR
+    LSR
+    CLC
+    ADC #1
+    STA arguments+0
+    JSR byte_to_dec
+    LDA returns+1
+    STA $0200+OFFER_SPRITE_OAM_LOCATION+SPRITE_DATA_I+16
+    LDA returns+2
+    STA $0200+OFFER_SPRITE_OAM_LOCATION+SPRITE_DATA_I+20
+    
+    
+    JMP +offer_displayed
+  +:
+  
+  ; no offer. hide it
+  
+  LDA #$ff
+  STA $0200+OFFER_SPRITE_OAM_LOCATION+SPRITE_DATA_Y
+  STA $0200+OFFER_SPRITE_OAM_LOCATION+SPRITE_DATA_Y+4
+  STA $0200+OFFER_SPRITE_OAM_LOCATION+SPRITE_DATA_Y+8
+  STA $0200+OFFER_SPRITE_OAM_LOCATION+SPRITE_DATA_Y+12
+  STA $0200+OFFER_SPRITE_OAM_LOCATION+SPRITE_DATA_Y+16
+  STA $0200+OFFER_SPRITE_OAM_LOCATION+SPRITE_DATA_Y+20
+  
+  +offer_displayed:
 ENDM
 
+CHEST_LOCATION_X .equ #48
+CHEST_LOCATION_Y .equ #140
+ROOM_DATA_CHEST_BIT .equ #%00000010
 MACRO check_onChest
+  LDX player_room
+  LDA dungeon_map, X
+  AND ROOM_DATA_CHEST_BIT
+  BEQ +not_on_chest
 
+  LDA actors+ACT_X
+  CMP CHEST_LOCATION_X
+  BCS +not_on_chest
+  
+  LDA actors+ACT_Y
+  CMP CHEST_LOCATION_Y
+  BCC +not_on_chest
+  
+  LDA #1
+  JMP +on_chest
+  
+  +not_on_chest:
+  LDA #0
+  +on_chest:
 ENDM
 
 MACRO check_onFountain
-
+  LDA #0
 ENDM
 
+GHOST_LOCATION_Y .equ #40
+GHOST_LOCATION_X .equ #200
+ROOM_DATA_GHOST_BIT .equ #%00000100
 MACRO check_onGhost
+  LDX player_room
+  LDA dungeon_map, X
+  AND ROOM_DATA_GHOST_BIT
+  BEQ +not_on_ghost
+
+  LDA actors+ACT_X
+  CMP GHOST_LOCATION_X
+  BCC +not_on_ghost
+  
+  LDA actors+ACT_Y
+  CMP GHOST_LOCATION_Y
+  BCS +not_on_ghost
+  
+  LDA #1
+  JMP +on_ghost
+  
+  +not_on_ghost:
+  LDA #0
+  +on_ghost:
 
 ENDM
 
@@ -207,6 +352,44 @@ MACRO move_actor
     INC actors+ACT_ANIM_TIMER,X
 
   +no_movement:
+ENDM
+
+MACRO buy_stuff
+  LDA actor_control
+  AND SELECT_BUTTON
+  BEQ +no_purchase
+  LDA current_offer_type
+  AND #%01000000
+  BEQ +no_purchase
+    LDA current_offer_type
+    AND #%10000000 ; is it a chest?
+    BEQ +not_a_chest
+      LDA current_offer_amounts
+      CLC
+      ADC #1
+      CLC
+      ADC player_money
+      BCC +value_full
+        LDA #255
+      +value_full:
+      
+      STA player_money
+      
+      LDX player_room
+      LDA ROOM_DATA_CHEST_BIT ; remove chest from room
+      EOR #$FF
+      AND dungeon_map,X
+      STA dungeon_map,X
+      
+      JSR draw_chest
+      
+      JMP +done_buying
+    +not_a_chest:
+    
+  +done_buying:
+  LDA #1
+  STA readout_update_req
+  +no_purchase:
 ENDM
 
 TOP_WALL_HEIGHT .equ #32

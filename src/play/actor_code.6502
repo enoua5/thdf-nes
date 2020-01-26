@@ -86,6 +86,8 @@ actor_tick:
 
 run_ai:
   LDA #0
+  
+  AND #%11001111 ; AI can't press start or select
   STA actor_control
   RTS
 
@@ -95,7 +97,7 @@ indv_actor_tick: ; I'm sorry for my inconsistant naming conventions
   
   move_actor
   test_pause
-  
+  buy_stuff
   
   RTS
 

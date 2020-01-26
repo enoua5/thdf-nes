@@ -97,7 +97,10 @@ MODE_DEATH = 3
                      ; +2[0-3] Fountain offer
                      ; +2[4-7] Fountain offer amount cost
     current_offer_amounts .dsb 1 ; [0-3] cost [4-7] amount
-    current_offer_type .dsb 1 ;    [4-6] 000 gems
+    current_offer_type .dsb 1 ;    [0] IS TREASURE
+                              ;    [1] OFFER EXISTS
+                              ;    [4-6] GIVES
+                              ;          000 gems
                               ;          001 healing
                               ;          010 mana
                               ;          011 agl
@@ -105,7 +108,8 @@ MODE_DEATH = 3
                               ;          101 str
                               ;          110 max mag
                               ;          111 max mp
-                              ;    [7] 0: coin, 1: gem
+                              ;    [7] COSTS
+                              ;          0: coin, 1: gem
                      
   .ende
   
