@@ -156,6 +156,16 @@ MACRO make_offer
   
   check_onFountain
   BEQ +
+    LDA offerings+0 ; get the offer type from the room data
+    AND #%00110000
+    LSR
+    LSR
+    LSR ; move it to where it needs to be in current offer data
+    ORA #%01001001; add in other metadata (existance, fountain offers, takes gems)
+    STA current_offer_type
+    
+    LDA offerings+2
+    STA current_offer_amounts
   
     JMP +offer_made
   +:
@@ -170,7 +180,7 @@ MACRO make_offer
     LSR
     LSR
     LSR ; move it to where it needs to be in current offer data
-    ORA #%01000000; add in other metadata
+    ORA #%01000000; add in other metadata (just flag existance)
     STA current_offer_type
     
     LDA offerings+1
@@ -183,7 +193,9 @@ MACRO make_offer
   
   LDA current_offer_type
   AND #%01000000 ; make sure the offer exists
-  BEQ +
+  BNE +
+    JMP +no_offer
+  +:
     LDA current_offer_type
     AND #%10000000 ; is it a free treasure?
     BEQ +asdfasdf
@@ -205,8 +217,204 @@ MACRO make_offer
       STA $0200+OFFER_SPRITE_OAM_LOCATION+SPRITE_DATA_Y+12
       STA $0200+OFFER_SPRITE_OAM_LOCATION+SPRITE_DATA_Y+16
       STA $0200+OFFER_SPRITE_OAM_LOCATION+SPRITE_DATA_Y+20
+      
+      JMP +write_values
     +asdfasdf:
     
+    ; put positive in correct place
+    LDA current_offer_type
+    AND #%00001110
+    LSR
+    CMP #0
+    BNE +next_type
+      LDA STAT_GEM_X
+      STA $0200+OFFER_SPRITE_OAM_LOCATION+SPRITE_DATA_X
+      CLC
+      ADC #8
+      STA $0200+OFFER_SPRITE_OAM_LOCATION+SPRITE_DATA_X+4
+      CLC
+      ADC #8
+      STA $0200+OFFER_SPRITE_OAM_LOCATION+SPRITE_DATA_X+8
+      
+      LDA STAT_BOTTOM_ROW_Y
+      STA $0200+OFFER_SPRITE_OAM_LOCATION+SPRITE_DATA_Y
+      STA $0200+OFFER_SPRITE_OAM_LOCATION+SPRITE_DATA_Y+4
+      STA $0200+OFFER_SPRITE_OAM_LOCATION+SPRITE_DATA_Y+8
+      
+      JMP +place_cost
+    +next_type:
+    
+    CMP #1
+    BNE +next_type
+      LDA STAT_HEART_X
+      STA $0200+OFFER_SPRITE_OAM_LOCATION+SPRITE_DATA_X
+      CLC
+      ADC #8
+      STA $0200+OFFER_SPRITE_OAM_LOCATION+SPRITE_DATA_X+4
+      CLC
+      ADC #8
+      STA $0200+OFFER_SPRITE_OAM_LOCATION+SPRITE_DATA_X+8
+      
+      LDA STAT_TOP_ROW_Y
+      STA $0200+OFFER_SPRITE_OAM_LOCATION+SPRITE_DATA_Y
+      STA $0200+OFFER_SPRITE_OAM_LOCATION+SPRITE_DATA_Y+4
+      STA $0200+OFFER_SPRITE_OAM_LOCATION+SPRITE_DATA_Y+8
+      
+      JMP +place_cost
+    +next_type:
+    
+    CMP #2
+    BNE +next_type
+      LDA STAT_MAGIC_X
+      STA $0200+OFFER_SPRITE_OAM_LOCATION+SPRITE_DATA_X
+      CLC
+      ADC #8
+      STA $0200+OFFER_SPRITE_OAM_LOCATION+SPRITE_DATA_X+4
+      CLC
+      ADC #8
+      STA $0200+OFFER_SPRITE_OAM_LOCATION+SPRITE_DATA_X+8
+      
+      LDA STAT_TOP_ROW_Y
+      STA $0200+OFFER_SPRITE_OAM_LOCATION+SPRITE_DATA_Y
+      STA $0200+OFFER_SPRITE_OAM_LOCATION+SPRITE_DATA_Y+4
+      STA $0200+OFFER_SPRITE_OAM_LOCATION+SPRITE_DATA_Y+8
+      
+      JMP +place_cost
+    +next_type:
+    
+    CMP #3
+    BNE +next_type
+      LDA STAT_AGL_X
+      STA $0200+OFFER_SPRITE_OAM_LOCATION+SPRITE_DATA_X
+      CLC
+      ADC #8
+      STA $0200+OFFER_SPRITE_OAM_LOCATION+SPRITE_DATA_X+4
+      CLC
+      ADC #8
+      STA $0200+OFFER_SPRITE_OAM_LOCATION+SPRITE_DATA_X+8
+      
+      LDA STAT_BOTTOM_ROW_Y
+      STA $0200+OFFER_SPRITE_OAM_LOCATION+SPRITE_DATA_Y
+      STA $0200+OFFER_SPRITE_OAM_LOCATION+SPRITE_DATA_Y+4
+      STA $0200+OFFER_SPRITE_OAM_LOCATION+SPRITE_DATA_Y+8
+      
+      JMP +place_cost
+    +next_type:
+    
+    CMP #4
+    BNE +next_type
+      LDA STAT_DEF_X
+      STA $0200+OFFER_SPRITE_OAM_LOCATION+SPRITE_DATA_X
+      CLC
+      ADC #8
+      STA $0200+OFFER_SPRITE_OAM_LOCATION+SPRITE_DATA_X+4
+      CLC
+      ADC #8
+      STA $0200+OFFER_SPRITE_OAM_LOCATION+SPRITE_DATA_X+8
+      
+      LDA STAT_BOTTOM_ROW_Y
+      STA $0200+OFFER_SPRITE_OAM_LOCATION+SPRITE_DATA_Y
+      STA $0200+OFFER_SPRITE_OAM_LOCATION+SPRITE_DATA_Y+4
+      STA $0200+OFFER_SPRITE_OAM_LOCATION+SPRITE_DATA_Y+8
+      
+      JMP +place_cost
+    +next_type:
+    
+    CMP #5
+    BNE +next_type
+      LDA STAT_STR_X
+      STA $0200+OFFER_SPRITE_OAM_LOCATION+SPRITE_DATA_X
+      CLC
+      ADC #8
+      STA $0200+OFFER_SPRITE_OAM_LOCATION+SPRITE_DATA_X+4
+      CLC
+      ADC #8
+      STA $0200+OFFER_SPRITE_OAM_LOCATION+SPRITE_DATA_X+8
+      
+      LDA STAT_BOTTOM_ROW_Y
+      STA $0200+OFFER_SPRITE_OAM_LOCATION+SPRITE_DATA_Y
+      STA $0200+OFFER_SPRITE_OAM_LOCATION+SPRITE_DATA_Y+4
+      STA $0200+OFFER_SPRITE_OAM_LOCATION+SPRITE_DATA_Y+8
+      
+      JMP +place_cost
+    +next_type:
+    
+    CMP #6
+    BNE +next_type
+      LDA STAT_MAGIC_MAX_X
+      STA $0200+OFFER_SPRITE_OAM_LOCATION+SPRITE_DATA_X
+      CLC
+      ADC #8
+      STA $0200+OFFER_SPRITE_OAM_LOCATION+SPRITE_DATA_X+4
+      CLC
+      ADC #8
+      STA $0200+OFFER_SPRITE_OAM_LOCATION+SPRITE_DATA_X+8
+      
+      LDA STAT_TOP_ROW_Y
+      STA $0200+OFFER_SPRITE_OAM_LOCATION+SPRITE_DATA_Y
+      STA $0200+OFFER_SPRITE_OAM_LOCATION+SPRITE_DATA_Y+4
+      STA $0200+OFFER_SPRITE_OAM_LOCATION+SPRITE_DATA_Y+8
+      
+      JMP +place_cost
+    +next_type:
+    
+    CMP #7
+    BNE +next_type
+      LDA STAT_HEART_MAX_X
+      STA $0200+OFFER_SPRITE_OAM_LOCATION+SPRITE_DATA_X
+      CLC
+      ADC #8
+      STA $0200+OFFER_SPRITE_OAM_LOCATION+SPRITE_DATA_X+4
+      CLC
+      ADC #8
+      STA $0200+OFFER_SPRITE_OAM_LOCATION+SPRITE_DATA_X+8
+      
+      LDA STAT_TOP_ROW_Y
+      STA $0200+OFFER_SPRITE_OAM_LOCATION+SPRITE_DATA_Y
+      STA $0200+OFFER_SPRITE_OAM_LOCATION+SPRITE_DATA_Y+4
+      STA $0200+OFFER_SPRITE_OAM_LOCATION+SPRITE_DATA_Y+8
+      
+      JMP +place_cost
+    +next_type:
+    
+    
+    +place_cost:
+    ; put negative in correct place
+    LDA current_offer_type
+    AND #%00000001
+    BNE +next_type
+      LDA STAT_COIN_X
+      STA $0200+OFFER_SPRITE_OAM_LOCATION+SPRITE_DATA_X+12
+      CLC
+      ADC #8
+      STA $0200+OFFER_SPRITE_OAM_LOCATION+SPRITE_DATA_X+16
+      CLC
+      ADC #8
+      STA $0200+OFFER_SPRITE_OAM_LOCATION+SPRITE_DATA_X+20
+      
+      LDA STAT_BOTTOM_ROW_Y
+      STA $0200+OFFER_SPRITE_OAM_LOCATION+SPRITE_DATA_Y+12
+      STA $0200+OFFER_SPRITE_OAM_LOCATION+SPRITE_DATA_Y+16
+      STA $0200+OFFER_SPRITE_OAM_LOCATION+SPRITE_DATA_Y+20
+      
+      JMP +write_values
+    +next_type:
+    
+      LDA STAT_GEM_X
+      STA $0200+OFFER_SPRITE_OAM_LOCATION+SPRITE_DATA_X+12
+      CLC
+      ADC #8
+      STA $0200+OFFER_SPRITE_OAM_LOCATION+SPRITE_DATA_X+16
+      CLC
+      ADC #8
+      STA $0200+OFFER_SPRITE_OAM_LOCATION+SPRITE_DATA_X+20
+      
+      LDA STAT_BOTTOM_ROW_Y
+      STA $0200+OFFER_SPRITE_OAM_LOCATION+SPRITE_DATA_Y+12
+      STA $0200+OFFER_SPRITE_OAM_LOCATION+SPRITE_DATA_Y+16
+      STA $0200+OFFER_SPRITE_OAM_LOCATION+SPRITE_DATA_Y+20
+      
+    +write_values:
     ; write values
     LDA current_offer_amounts
     AND #$0F
@@ -236,7 +444,7 @@ MACRO make_offer
     
     
     JMP +offer_displayed
-  +:
+  +no_offer:
   
   ; no offer. hide it
   
@@ -276,12 +484,43 @@ MACRO check_onChest
   +on_chest:
 ENDM
 
+FOUNTAIN_RIGHT_LOCATION_X .equ #140
+FOUNTAIN_TOP_LOCATION_Y .equ #80
+FOUNTAIN_LEFT_LOCATION_X .equ #116
+FOUNTAIN_BOTTOM_LOCATION_Y .equ #108
+ROOM_DATA_FOUNTAIN_BIT .equ #%00001000
 MACRO check_onFountain
+  LDX player_room
+  LDA dungeon_map, X
+  AND ROOM_DATA_FOUNTAIN_BIT
+  BEQ +not_on_fountain
+
+  LDA actors+ACT_X
+  CMP FOUNTAIN_RIGHT_LOCATION_X
+  BCS +not_on_fountain
+  
+  LDA actors+ACT_Y
+  CMP FOUNTAIN_TOP_LOCATION_Y
+  BCC +not_on_fountain
+
+  LDA actors+ACT_X
+  CMP FOUNTAIN_LEFT_LOCATION_X
+  BCC +not_on_fountain
+  
+  LDA actors+ACT_Y
+  CMP FOUNTAIN_BOTTOM_LOCATION_Y
+  BCS +not_on_fountain
+  
+  LDA #1
+  JMP +on_fountain
+  
+  +not_on_fountain:
   LDA #0
+  +on_fountain:
 ENDM
 
-GHOST_LOCATION_Y .equ #40
-GHOST_LOCATION_X .equ #200
+GHOST_LOCATION_Y .equ #48
+GHOST_LOCATION_X .equ #208
 ROOM_DATA_GHOST_BIT .equ #%00000100
 MACRO check_onGhost
   LDX player_room
@@ -357,10 +596,15 @@ ENDM
 MACRO buy_stuff
   LDA actor_control
   AND SELECT_BUTTON
-  BEQ +no_purchase
+  BNE +
+    JMP +no_purchase
+  +:
+  
   LDA current_offer_type
   AND #%01000000
-  BEQ +no_purchase
+  BNE +
+    JMP +no_purchase
+  +:
     LDA current_offer_type
     AND #%10000000 ; is it a chest?
     BEQ +not_a_chest
@@ -369,9 +613,9 @@ MACRO buy_stuff
       ADC #1
       CLC
       ADC player_money
-      BCC +value_full
+      BCC +value_not_full
         LDA #255
-      +value_full:
+      +value_not_full:
       
       STA player_money
       
@@ -386,6 +630,183 @@ MACRO buy_stuff
       JMP +done_buying
     +not_a_chest:
     
+    ; make sure player has enough money
+    LDA current_offer_type
+    AND #%00000001
+    BNE +costs_gems
+      ; costs coins
+      LDA current_offer_amounts
+      AND #$F0 ; just the cost
+      LSR
+      LSR
+      LSR
+      LSR
+      ; leave off the +1 for now so we can use BCC
+      ;CLC
+      ;ADC #1 ; get actual cost
+      
+      CMP player_money
+      BCC + ; can't afford
+        JMP +done_buying
+      +:
+      
+      ; take away money
+      CLC 
+      ADC #1
+      STA generic_bytes+88 ; save cost because we need to load current money
+      LDA player_money
+      SEC
+      SBC generic_bytes+88
+      STA player_money
+      
+      JMP +can_afford
+      
+    +costs_gems:
+      LDA current_offer_amounts
+      AND #$F0 ; just the cost
+      LSR
+      LSR
+      LSR
+      LSR
+      ; leave off the +1 for now so we can use BCC
+      ;CLC
+      ;ADC #1 ; get actual cost
+      
+      CMP player_jewels
+      BCC + ; can't afford
+        JMP +done_buying
+      +:
+      ; take away money
+      CLC 
+      ADC #1
+      STA generic_bytes+88 ; save cost because we need to load current money
+      LDA player_jewels
+      SEC
+      SBC generic_bytes+88
+      STA player_jewels
+      
+      JMP +can_afford
+    
+    +can_afford:
+      
+      ; give the thing
+      LDA current_offer_amounts
+      AND #$0F
+      CLC
+      ADC #1
+      STA generic_bytes+69
+      
+      LDA current_offer_type
+      AND #$0F
+      LSR
+      
+      CMP #0
+      BNE +next_item
+        LDA player_jewels
+        CLC
+        ADC generic_bytes+69
+        BCC +not_too_much
+          LDA #255
+        +not_too_much:
+        
+        STA player_jewels
+        JMP +done_buying
+      +next_item:
+      
+      CMP #1
+      BNE +next_item
+        LDA actors+ACT_HP
+        CLC
+        ADC generic_bytes+69
+        CMP actors+ACT_HPMAX
+        BCC +not_too_much
+          LDA actors+ACT_HPMAX
+        +not_too_much:
+        
+        STA actors+ACT_HP
+        JMP +done_buying
+      +next_item:
+      
+      CMP #2
+      BNE +next_item
+        LDA actors+ACT_MANA
+        CLC
+        ADC generic_bytes+69
+        CMP actors+ACT_MANAMAX
+        BCC +not_too_much
+          LDA actors+ACT_MANAMAX
+        +not_too_much:
+        
+        STA actors+ACT_MANA
+        JMP +done_buying
+      +next_item:
+      
+      CMP #3
+      BNE +next_item
+        LDA actors+ACT_AGL
+        CLC
+        ADC generic_bytes+69
+        BCC +not_too_much
+          LDA #255
+        +not_too_much:
+        
+        STA actors+ACT_AGL
+        JMP +done_buying
+      +next_item:
+      
+      CMP #4
+      BNE +next_item
+        LDA actors+ACT_DEF
+        CLC
+        ADC generic_bytes+69
+        BCC +not_too_much
+          LDA #255
+        +not_too_much:
+        
+        STA actors+ACT_DEF
+        JMP +done_buying
+      +next_item:
+      
+      CMP #5
+      BNE +next_item
+        LDA actors+ACT_STR
+        CLC
+        ADC generic_bytes+69
+        CMP #127
+        BCC +not_too_much
+          LDA #127
+        +not_too_much:
+        
+        STA actors+ACT_STR
+        JMP +done_buying
+      +next_item:
+      
+      CMP #6
+      BNE +next_item
+        LDA actors+ACT_MANAMAX
+        CLC
+        ADC generic_bytes+69
+        BCC +not_too_much
+          LDA #255
+        +not_too_much:
+        
+        STA actors+ACT_MANAMAX
+        JMP +done_buying
+      +next_item:
+      
+      CMP #7
+      BNE +next_item
+        LDA actors+ACT_HPMAX
+        CLC
+        ADC generic_bytes+69
+        BCC +not_too_much
+          LDA #255
+        +not_too_much:
+        
+        STA actors+ACT_HPMAX
+        JMP +done_buying
+      +next_item:
+      
   +done_buying:
   LDA #1
   STA readout_update_req

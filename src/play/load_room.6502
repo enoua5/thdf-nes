@@ -41,9 +41,21 @@ draw_room:
       STA offerings+1
       STA offerings+2; reset offerings
     
+      ; save rng status to maintain entropy because room generation loads a seed
+      LDA rng_seed+0
+      STA generic_bytes+76
+      LDA rng_seed+1
+      STA generic_bytes+77
+      
       JSR draw_spirit
       JSR draw_fountain
       JSR draw_chest
+      
+      ; restore rng state
+      LDA generic_bytes+76
+      STA rng_seed+0
+      LDA generic_bytes+77
+      STA rng_seed+1
     +:
     
     LDA #0
@@ -436,6 +448,7 @@ draw_spirit:
     STA rng_seed
     LDA player_room
     STA rng_seed+1
+    JSR rng ; run it once becuase I was noticing patterns
   
     JSR rng
     LDA rng_seed

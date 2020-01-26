@@ -107,7 +107,7 @@ MODE_DEATH = 3
                               ;          100 def
                               ;          101 str
                               ;          110 max mag
-                              ;          111 max mp
+                              ;          111 max hp
                               ;    [7] COSTS
                               ;          0: coin, 1: gem
                      
