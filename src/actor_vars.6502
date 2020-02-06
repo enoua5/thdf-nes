@@ -1,4 +1,4 @@
-  ACTOR_DATA_LENGTH .equ 20
+  ACTOR_DATA_LENGTH .equ 22
 
   actors .dsb 0 ;anchor for finding actors
   player .dsb ACTOR_DATA_LENGTH
@@ -18,15 +18,25 @@
   ACT_HP .equ 5
   ACT_MANA .equ 6
   ACT_ATTKTIME .equ 7
-  ACT_X .equ 8
-  ACT_Y .equ 9
-  ACT_ANIM_TIMER .equ 10
-  ACT_FACE .equ 11
-  ACT_FIRE_FACE .equ 12
-  ACT_FIRE_X .equ 13
-  ACT_FIRE_Y .equ 14
-  ACT_FIRE_XVEL .equ 15
-  ACT_FIRE_YVEL .equ 16
-  ACT_FIRE_ANIM_TIMER .equ 17
-  ACT_READOUT_TIMER .equ 18
-  ACT_READOUT_VALUE .equ 19
+  ACT_SWORD_DATA .equ 8 ; VVVVVVVV
+  ACT_FIRE_DATA .equ 9  ; 00000000  (keep track of hits, so we don't multi-hit)
+                        ; |||||||+- attack has hit player
+                        ; ||||||+- attack has hit warrior
+                        ; |||||+- attack has hit theif
+                        ; ||||+- attack has hit mage
+                        ; |||+- attack has hit tank
+                        ; ||+- attack has hit boss
+                        ; |+- [unused]
+                        ; + Attack is active
+  ACT_X .equ 10
+  ACT_Y .equ 11
+  ACT_ANIM_TIMER .equ 12
+  ACT_FACE .equ 13
+  ACT_FIRE_FACE .equ 14
+  ACT_FIRE_X .equ 15
+  ACT_FIRE_Y .equ 16
+  ACT_FIRE_XVEL .equ 17
+  ACT_FIRE_YVEL .equ 18
+  ACT_FIRE_ANIM_TIMER .equ 19
+  ACT_READOUT_TIMER .equ 20
+  ACT_READOUT_VALUE .equ 21

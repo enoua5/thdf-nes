@@ -1,3 +1,5 @@
+.incsrc "src/play/actor_macros.6502"
+
 ACT_SPRITE_HEAD  .equ 0
 ACT_SPRITE_BODY  .equ 4
 ACT_SPRITE_FIRE  .equ 8
@@ -95,6 +97,8 @@ indv_actor_tick: ; I'm sorry for my inconsistant naming conventions
                  ; (not sorry enough to do something about it though)
   LDX actor_data_pointer
   
+  swing_sword
+  shoot_fire
   move_actor
   test_pause
   buy_stuff
