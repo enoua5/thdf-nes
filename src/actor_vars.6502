@@ -19,7 +19,7 @@
   ACT_MANA .equ 6
   ACT_ATTKTIME .equ 7
   ACT_SWORD_DATA .equ 8 ; VVVVVVVV
-  ACT_FIRE_DATA .equ 9  ; 00000000  (keep track of hits, so we don't multi-hit)
+  ACT_FIRE_DATA .equ 9  ; 76543210  (keep track of hits, so we don't multi-hit)
                         ; |||||||+- attack has hit player
                         ; ||||||+- attack has hit warrior
                         ; |||||+- attack has hit theif

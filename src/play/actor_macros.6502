@@ -87,9 +87,16 @@ ENDM
 MACRO move_actor
   LDA actor_control
   AND #$0F ; ignore everything but d-pad
-  BNE +yes_movement
+  BNE +maybe_movement
     JMP +no_movement
+    
+  +maybe_movement:
+  LDA actors+ACT_ATTKTIME,X
+  BEQ +yes_movement ; if not attacking, can move
+    JMP +no_movement
+  
   +yes_movement:
+    LDA actor_control
     AND RIGHT_BUTTON
     BEQ ++
       LDA #2
@@ -571,4 +578,294 @@ MACRO test_pause
     AND button_ondown
     STA button_ondown
   +:
+ENDM
+
+MACRO swing_sword
+  LDA actors+ACT_ATTKTIME,X
+  BNE +already_attacking
+  
+  LDA actor_control
+  AND A_BUTTON
+  BEQ +end_of_swing_sword_macro ; no sword attack made
+  
+    ; 0x40 frames until attack ends
+    LDA #$40
+    STA actors+ACT_ATTKTIME,X
+    
+    ; mark attacker as "hit", making it impossible to hit self
+    LDA #1
+    LDY _enemy_loop_counter
+    -:
+      CPY #0
+      BEQ +
+    
+      ASL A ; shift the bit left once based which actor we're processing
+      
+      DEY
+    JMP -
+    +:
+    
+    ORA #%10000000 ; mark attack as active
+    STA actors+ACT_SWORD_DATA,X
+    
+    
+  +already_attacking:
+  ;decrement attack time
+  DEC actors+ACT_ATTKTIME,X
+  BNE +end_of_swing_sword_macro
+  
+    ;attack is over
+    LDA #0
+    STA actors+ACT_SWORD_DATA,X
+  
+  +end_of_swing_sword_macro:
+ENDM
+
+MACRO shoot_fire
+  LDA actors+ACT_ATTKTIME,X
+  BEQ +
+    JMP +already_attacking
+  +:
+  
+  LDA actor_control
+  AND B_BUTTON
+  BNE +
+    JMP +end_of_shoot_fire_macro ; no fire attack made
+  +:
+  
+  LDA actors+ACT_MANA,X
+  BNE +
+    JMP +end_of_shoot_fire_macro ; not enough mana to shoot fire
+  +:
+  
+  LDA actors+ACT_FIRE_DATA,X
+  BEQ +
+    JMP +end_of_shoot_fire_macro ; last fireball is still on screen
+  +:
+  
+    ; 0x40 frames until attack ends
+    LDA #$40
+    STA actors+ACT_ATTKTIME,X
+    
+    ; mark attacker as "hit", making it impossible to hit self
+    LDA #1
+    LDY _enemy_loop_counter
+    -:
+      CPY #0
+      BEQ +
+    
+      ASL A ; shift the bit left once based which actor we're processing
+      
+      DEY
+    JMP -
+    +:
+    
+    ORA #%10000000 ; mark attack as active
+    STA actors+ACT_FIRE_DATA,X
+    
+    ; spawn fireball
+    LDA actors+ACT_X,X
+    STA actors+ACT_FIRE_X,X
+    LDA actors+ACT_Y,X
+    STA actors+ACT_FIRE_Y,X
+    LDA actors+ACT_FACE,X
+    STA actors+ACT_FIRE_FACE,X
+    ; move fireball to a sensable "hand" spot
+    TAY
+    BNE + ; facing down
+      LDA actors+ACT_FIRE_X,X
+      SEC
+      SBC #4
+      STA actors+ACT_FIRE_X,X
+      
+      LDA actors+ACT_FIRE_Y,X
+      CLC
+      ADC #4
+      STA actors+ACT_FIRE_Y,X
+      
+      
+      LDA #1
+      STA actors+ACT_FIRE_YVEL,X
+      
+      LDA actor_control
+      AND RIGHT_BUTTON
+      BEQ +n
+        LDA #1
+        STA actors+ACT_FIRE_XVEL,X
+        JMP ++
+      +n:
+      LDA actor_control
+      AND LEFT_BUTTON
+      BEQ +n
+        LDA #-1
+        STA actors+ACT_FIRE_XVEL,X
+        JMP ++
+      +n:
+        CLC
+        INC actors+ACT_FIRE_YVEL,X
+        LDA #0
+        STA actors+ACT_FIRE_XVEL,X
+      
+      JMP ++
+    +:
+    DEY
+    BNE + ; facing up
+      LDA actors+ACT_FIRE_X,X
+      SEC
+      SBC #4
+      STA actors+ACT_FIRE_X,X
+      
+      LDA actors+ACT_FIRE_Y,X
+      SEC
+      SBC #12
+      STA actors+ACT_FIRE_Y,X
+      
+      
+      LDA #-1
+      STA actors+ACT_FIRE_YVEL,X
+      
+      LDA actor_control
+      AND RIGHT_BUTTON
+      BEQ +n
+        LDA #1
+        STA actors+ACT_FIRE_XVEL,X
+        JMP ++
+      +n:
+      LDA actor_control
+      AND LEFT_BUTTON
+      BEQ +n
+        LDA #-1
+        STA actors+ACT_FIRE_XVEL,X
+        JMP ++
+      +n:
+        SEC
+        DEC actors+ACT_FIRE_YVEL,X
+        LDA #0
+        STA actors+ACT_FIRE_XVEL,X
+      
+      JMP ++
+    +:
+    DEY
+    BNE + ; facing right
+      LDA actors+ACT_FIRE_X,X
+      CLC
+      ADC #4
+      STA actors+ACT_FIRE_X,X
+      
+      LDA actors+ACT_FIRE_Y,X
+      SEC
+      SBC #8
+      STA actors+ACT_FIRE_Y,X
+      
+      
+      LDA #1
+      STA actors+ACT_FIRE_XVEL,X
+      
+      LDA actor_control
+      AND DOWN_BUTTON
+      BEQ +n
+        LDA #1
+        STA actors+ACT_FIRE_YVEL,X
+        JMP ++
+      +n:
+      LDA actor_control
+      AND UP_BUTTON
+      BEQ +n
+        LDA #-1
+        STA actors+ACT_FIRE_YVEL,X
+        JMP ++
+      +n:
+        CLC
+        INC actors+ACT_FIRE_XVEL,X
+        LDA #0
+        STA actors+ACT_FIRE_YVEL,X
+      
+      JMP ++
+    +:
+    DEY
+    BNE + ; facing left
+      LDA actors+ACT_FIRE_X,X
+      SEC
+      SBC #12
+      STA actors+ACT_FIRE_X,X
+      
+      LDA actors+ACT_FIRE_Y,X
+      SEC
+      SBC #8
+      STA actors+ACT_FIRE_Y,X
+      
+      
+      LDA #-1
+      STA actors+ACT_FIRE_XVEL,X
+      
+      LDA actor_control
+      AND DOWN_BUTTON
+      BEQ +n
+        LDA #1
+        STA actors+ACT_FIRE_YVEL,X
+        JMP ++
+      +n:
+      LDA actor_control
+      AND UP_BUTTON
+      BEQ +n
+        LDA #-1
+        STA actors+ACT_FIRE_YVEL,X
+        JMP ++
+      +n:
+        SEC
+        DEC actors+ACT_FIRE_XVEL,X
+        LDA #0
+        STA actors+ACT_FIRE_YVEL,X
+      
+    +:
+    ++:
+    
+  +already_attacking:
+  ;decrement attack time
+  DEC actors+ACT_ATTKTIME,X
+  +end_of_shoot_fire_macro:
+ENDM
+
+MACRO check_sword_hit
+
+ENDM
+
+MACRO move_and_check_fire_hit
+  LDA actors+ACT_FIRE_DATA,X
+  AND #%10000000 ; Attack is active bit
+  BEQ +end_fire
+    ; update position
+    LDA actors+ACT_FIRE_X,X
+    CLC
+    ADC actors+ACT_FIRE_XVEL,X
+    STA actors+ACT_FIRE_X,X
+    LDA actors+ACT_FIRE_Y,X
+    CLC
+    ADC actors+ACT_FIRE_YVEL,X
+    STA actors+ACT_FIRE_Y,X
+    ; delete when off screen
+    LDA actors+ACT_FIRE_Y,X
+    CMP #8
+    BCC +delete_fire
+    CMP #174
+    BCS +delete_fire
+    LDA actors+ACT_FIRE_X,X
+    CMP #8
+    BCC +delete_fire
+    CMP #248
+    BCS +delete_fire
+    
+    JMP +do_not_delete_fire
+    +delete_fire:
+      LDA #0
+      STA actors+ACT_FIRE_YVEL,X
+      STA actors+ACT_FIRE_XVEL,X
+      STA actors+ACT_FIRE_X,X
+      STA actors+ACT_FIRE_DATA,X
+      LDA #$FF
+      STA actors+ACT_FIRE_Y,X
+    JMP +end_fire
+    +do_not_delete_fire:
+    
+  +end_fire:
 ENDM

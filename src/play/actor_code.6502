@@ -100,6 +100,8 @@ indv_actor_tick: ; I'm sorry for my inconsistant naming conventions
   swing_sword
   shoot_fire
   move_actor
+  move_and_check_fire_hit
+  check_sword_hit
   test_pause
   buy_stuff
   
