@@ -126,6 +126,12 @@ draw_body:
   ; GOING DOWN
     LDA actor_sprite_rom_pointer
     ;"add 0"
+    ;display attack frame if attacking
+    LDY actors+ACT_ATTKTIME
+    BEQ +not_attacking
+      CLC
+      ADC #4
+    +not_attacking:
     LDX actor_sprite_pointer
     STA $0200+ACT_SPRITE_HEAD+SPRITE_DATA_I,X
     
@@ -166,6 +172,12 @@ draw_body:
     LDA actor_sprite_rom_pointer
     CLC
     ADC #1
+    ;display attack frame if attacking
+    LDY actors+ACT_ATTKTIME
+    BEQ +not_attacking
+      CLC
+      ADC #4
+    +not_attacking:
     LDX actor_sprite_pointer
     STA $0200+ACT_SPRITE_HEAD+SPRITE_DATA_I,X
     
@@ -234,19 +246,31 @@ draw_body:
     
     shared_lr_stepside_rendering:
     LDX actor_data_pointer
-    LDA actors+ACT_ANIM_TIMER,X
-    AND #%00001000
-    ASL
-    ASL
-    ASL
-    ASL
-    ASL
-    ADC #2
-    STA generic_bytes
+    
+    ;skip the step-side check if attacking
+    LDA #-1 ; default step side for if we skip
+    LDY actors+ACT_ATTKTIME
+    BNE +attacking
+      LDA actors+ACT_ANIM_TIMER,X
+      AND #%00001000
+      ASL
+      ASL
+      ASL
+      ASL
+      ASL
+    +attacking:
+      ADC #2
+      STA generic_bytes
     
     LDA actor_sprite_rom_pointer
     CLC
     ADC generic_bytes
+    ;display attack frame if attacking
+    LDY actors+ACT_ATTKTIME
+    BEQ +not_attacking
+      CLC
+      ADC #4
+    +not_attacking:
     LDX actor_sprite_pointer
     STA $0200+ACT_SPRITE_HEAD+SPRITE_DATA_I,X
     
