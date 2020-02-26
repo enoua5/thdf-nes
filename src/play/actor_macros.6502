@@ -830,10 +830,16 @@ MACRO check_sword_hit
 
 ENDM
 
+_subrout_enemies_in_room .equ generic_bytes+65
+_subrout_enemy_loop_counter .equ generic_bytes+64
+_subrout_actor_data_pointer .equ generic_bytes+66
+_hit_ignores .equ generic_bytes+67
 MACRO move_and_check_fire_hit
   LDA actors+ACT_FIRE_DATA,X
   AND #%10000000 ; Attack is active bit
-  BEQ +end_fire
+  BNE +
+    JMP +end_fire
+  +:
     ; update position
     LDA actors+ACT_FIRE_X,X
     CLC
@@ -867,5 +873,114 @@ MACRO move_and_check_fire_hit
     JMP +end_fire
     +do_not_delete_fire:
     
+    LDA actors+ACT_FIRE_DATA,X
+    STA _hit_ignores
+    
+    LDX player_room
+    LDA dungeon_map, X
+    AND #%11110000 ; we only care about the enemies
+    CLC
+    LSR
+    LSR
+    LSR
+    LSR
+    STA _subrout_enemies_in_room
+    
+    LDA player_room
+    CMP boss_room
+    BNE +
+      LDA _subrout_enemies_in_room
+      ORA #%00010000
+      STA _subrout_enemies_in_room
+    +:
+    
+    CLC
+    ASL _subrout_enemies_in_room
+    LDA _subrout_enemies_in_room
+    ORA #%00000001
+    STA _subrout_enemies_in_room
+    
+    LDA #0
+    STA _subrout_actor_data_pointer
+    STA _subrout_enemy_loop_counter
+    
+    
+    -:
+      LDA _subrout_enemies_in_room
+      AND #%00000001
+      BEQ +
+        ; check if already hit
+        LDA _hit_ignores
+        AND #%00000001
+        BNE +end_checkhit
+
+        ;;;;;;;;;;;;;;;;
+        LDA _enemy_loop_counter
+        CLC
+        ASL
+        ASL
+        ASL
+        ASL
+        ASL ; we now have location of attacker sprite
+        CLC
+        ADC #ACT_SPRITE_FIRE
+        STA arguments+0
+        
+        LDA _subrout_enemy_loop_counter
+        ;STA generic_bytes+$4b
+        CLC
+        ASL
+        ASL
+        ASL
+        ASL
+        ASL ; we now have location of targer sprite
+        CLC
+        ADC #ACT_SPRITE_HEAD
+        STA arguments+1
+        
+        JSR check_sprite_overlap
+        LDX actor_data_pointer
+        LDA returns+0
+        BNE +enemy_hit
+        
+        ;LDA _subrout_enemy_loop_counter
+        ;CLC
+        ;ASL
+        ;ASL
+        ;ASL
+        ;ASL
+        ;ASL ; we now have location of targer sprite
+        ;ADC ACT_SPRITE_BODY
+        ;STA arguments+1
+        
+        ;JSR check_sprite_overlap
+        ;LDA returns+0
+        ;BNE +enemy_hit
+        
+        JMP +end_checkhit
+        +enemy_hit:
+        ;JMP Reset
+        +end_checkhit:
+        ;JMP ++
+      +:
+        CLC
+        ROR _subrout_enemies_in_room
+        CLC
+        ROR _hit_ignores
+      ;++:
+      
+      LDA #ACTOR_DATA_LENGTH
+      CLC
+      ADC _subrout_actor_data_pointer
+      STA _subrout_actor_data_pointer
+    LDA _subrout_enemy_loop_counter
+    CLC
+    ADC #1
+    STA _subrout_enemy_loop_counter
+    CMP NUMBER_OF_ACTORS
+    BNE -
+
   +end_fire:
+  
+  LDX actor_data_pointer
 ENDM

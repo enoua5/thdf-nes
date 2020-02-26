@@ -151,3 +151,62 @@ byte_to_dec:
   STA returns+2
   
   RTS
+  
+check_sprite_overlap:
+  LDX arguments+0
+  LDA $0200,X ; sprite 1 Y
+  STA returns+0
+  INX
+  INX
+  INX
+  LDA $0200,X ; sprite 1 X
+  STA returns+1
+  
+  LDX arguments+1
+  LDA $0200,X ; sprite 2 Y
+  STA returns+2
+  INX
+  INX
+  INX
+  LDA $0200,X ; sprite 2 X
+  STA returns+3
+
+  ;;;;;;;;;;;;;;
+  
+  
+  ; x1>x2+8
+  LDA returns+3
+  CLC
+  ADC #8
+  CMP returns+1
+  BCC +no_overlap
+  
+  ; x2>x1+8
+  LDA returns+1
+  CLC
+  ADC #8
+  CMP returns+3
+  BCC +no_overlap
+  
+  ; y1>y2+8
+  LDA returns+2
+  CLC
+  ADC #8
+  CMP returns+0
+  BCC +no_overlap
+  
+  ; y2>y1+8
+  LDA returns+0
+  CLC
+  ADC #8
+  CMP returns+2
+  BCC +no_overlap
+  
+  +overlap:
+  LDA #1
+  STA returns+0
+  RTS
+  +no_overlap:
+  LDA #0
+  STA returns+0
+  RTS
