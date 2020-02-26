@@ -125,9 +125,9 @@ draw_body:
   BNE +
   ; GOING DOWN
     LDA actor_sprite_rom_pointer
-    ;"add 0"
+    ; "ADC #0"
     ;display attack frame if attacking
-    LDY actors+ACT_ATTKTIME
+    LDY actors+ACT_ATTKTIME,X
     BEQ +not_attacking
       CLC
       ADC #4
@@ -173,7 +173,7 @@ draw_body:
     CLC
     ADC #1
     ;display attack frame if attacking
-    LDY actors+ACT_ATTKTIME
+    LDY actors+ACT_ATTKTIME,X
     BEQ +not_attacking
       CLC
       ADC #4
@@ -249,7 +249,7 @@ draw_body:
     
     ;skip the step-side check if attacking
     LDA #-1 ; default step side for if we skip
-    LDY actors+ACT_ATTKTIME
+    LDY actors+ACT_ATTKTIME,X
     BNE +attacking
       LDA actors+ACT_ANIM_TIMER,X
       AND #%00001000
@@ -266,7 +266,7 @@ draw_body:
     CLC
     ADC generic_bytes
     ;display attack frame if attacking
-    LDY actors+ACT_ATTKTIME
+    LDY actors+ACT_ATTKTIME,X
     BEQ +not_attacking
       CLC
       ADC #4
