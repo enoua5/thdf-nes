@@ -210,3 +210,14 @@ check_sprite_overlap:
   LDA #0
   STA returns+0
   RTS
+  
+modulo:
+  LDA arguments+0
+  SEC
+  -:
+    SBC arguments+1
+  BCS -
+  ADC arguments+1
+  STA returns+0
+  
+  RTS
