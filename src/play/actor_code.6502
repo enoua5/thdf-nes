@@ -107,6 +107,8 @@ indv_actor_tick: ; I'm sorry for my inconsistant naming conventions
   
   RTS
 
+do_actor_hit:
+  RTS
 
 spawn_actor:
   ;uses generic bytes 16 and 17 to set x and y
