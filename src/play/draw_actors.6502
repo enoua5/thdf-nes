@@ -371,7 +371,7 @@ check_if_draw_readout:
   +:
     ; no digit display
     LDA #0
-    STA actors+ACT_READOUT_VALUE ; set damage reading back to 0
+    STA actors+ACT_READOUT_VALUE,X ; set damage reading back to 0
     
   
     LDX actor_sprite_pointer
@@ -396,14 +396,14 @@ set_readout_digs:
     JMP ++
   +:
   
-  CMP #9
+  CMP #10
   BCS +
     LDA #1
     STA num_digs
     JMP ++
   +:
   
-  CMP #99
+  CMP #100
   BCS +
     LDA #2
     STA num_digs
