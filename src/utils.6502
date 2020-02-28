@@ -212,6 +212,13 @@ check_sprite_overlap:
   RTS
   
 modulo:
+  ; check for divide by 0
+  LDA arguments+1
+  BNE +
+    DEC arguments+1 ; set to 255.
+                    ; This makes sense in the context of this game
+                    ; as % 0 happens when the player maxes out a score
+  +:
   LDA arguments+0
   SEC
   -:

@@ -107,7 +107,102 @@ indv_actor_tick: ; I'm sorry for my inconsistant naming conventions
   
   RTS
 
+
+_hit_attacker .equ generic_bytes+3 
+_hit_defender .equ generic_bytes+4
+_hit_is_fire .equ generic_bytes+5
+_hit_damage .equ generic_bytes+6
+_hit_attacker_roll .equ generic_bytes+7
+;_hit_defender_roll .equ generic_bytes+8
+_hit_bitmask .equ generic_bytes+9
+READOUT_TIME .equ #100
 do_actor_hit:
+  ; save arguments because we will make function calls
+  LDA arguments+0
+  STA _hit_attacker
+  LDA arguments+1
+  STA _hit_defender
+  LDA arguments+2
+  STA _hit_is_fire
+  
+  ; init damage dealt to 0
+  LDA #0
+  STA _hit_damage
+  
+  ; determine if the attack is a hit
+  LDA _hit_is_fire
+  BNE +find_damage ; fire attacks cannot be dodged
+  
+  ; roll attacker AGL
+  LDX _hit_attacker
+  LDA actors+ACT_AGL,X ; get attacker agility (ability to land a hit)
+  CLC
+  ADC #1 ; add one for the modulo
+  STA arguments+1 ; this is the divisor
+  JSR rng
+  STA arguments+0 ; the dividend is is random number
+                  ; this gets a random number from 0 to (AGL-1)
+  JSR modulo
+  LDA returns+0
+  STA _hit_attacker_roll
+  
+  ; roll defender DEF
+  LDX _hit_defender
+  LDA actors+ACT_DEF,X ; get attacker agility (ability to land a hit)
+  CLC
+  ADC #1 ; add one for the modulo
+  STA arguments+1 ; this is the divisor
+  JSR rng
+  STA arguments+0 ; the dividend is is random number
+                  ; this gets a random number from 0 to (DEF-1)
+  JSR modulo
+  LDA returns+0
+  ;STA _hit_defender_roll
+  
+  CMP _hit_attacker_roll
+  BCC +
+    JMP +disp ; defender_roll >= attacker_roll, attack missed
+  +:
+  
+  +find_damage:
+  ; roll attacker STR
+  LDX _hit_attacker
+  LDA actors+ACT_STR,X
+  CLC
+  ADC #1 ; add one for the modulo
+  STA arguments+1 ; this is the divisor
+  JSR rng
+  STA arguments+0 ; the dividend is a random number
+  JSR modulo ; this gives us a random number from 0 to (STR-1)
+  LDA returns+0
+  CLC
+  ADC #1 ; shift the range to (0, STR)
+  STA _hit_damage
+  
+  ; apply damage
+  LDX _hit_defender
+  LDA actors+ACT_HP, X
+  SEC
+  SBC _hit_damage
+  
+  ; if the health has gone to zero or lower, it is dead
+  BCC +kill
+  BEQ +kill
+  
+  
+  +disp:
+  LDX _hit_defender
+  LDA READOUT_TIME
+  STA actors+ACT_READOUT_TIMER,X ; set the damage display timer
+  LDA _hit_damage
+  STA actors+ACT_READOUT_VALUE,X ; and value
+  
+  +mark_immune:
+  
+  RTS
+  
+  +kill:
+  
   RTS
 
 spawn_actor:
