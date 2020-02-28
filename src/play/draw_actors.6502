@@ -474,19 +474,19 @@ set_readout_y:
   CLC
   LDX num_digs
   BNE +
-    LDA #$80
+    LDA #$FF
   +:
   STA $0200+ACT_SPRITE_DIG2+SPRITE_DATA_Y,Y
   CLC
   DEX
   BNE +
-    LDA #$90
+    LDA #$FF
   +:
   STA $0200+ACT_SPRITE_DIG1+SPRITE_DATA_Y,Y
   CLC
   DEX
   BNE +
-    LDA #$a0
+    LDA #$FF
   +:
   STA $0200+ACT_SPRITE_DIG0+SPRITE_DATA_Y,Y
 
