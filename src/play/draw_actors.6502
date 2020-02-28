@@ -358,10 +358,10 @@ check_if_draw_readout:
   LDX actor_data_pointer
   LDA actors+ACT_READOUT_TIMER,X
   BEQ +
-    SEC
-    DEC actors+ACT_READOUT_TIMER,X
-  
     ; yes digit display
+    SEC
+    DEC actors+ACT_READOUT_TIMER,X ; decrement counter
+  
     JSR set_readout_digs
     JSR set_readout_color
     JSR set_readout_y
@@ -370,6 +370,10 @@ check_if_draw_readout:
     JMP ++
   +:
     ; no digit display
+    LDA #0
+    STA actors+ACT_READOUT_VALUE ; set damage reading back to 0
+    
+  
     LDX actor_sprite_pointer
     LDA #$FF
     STA $0200+ACT_SPRITE_DIG0+SPRITE_DATA_Y,X
