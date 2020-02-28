@@ -65,12 +65,12 @@ actor_tick:
       JSR run_ai
       +skip_enemy_in_room_check:
       JSR indv_actor_tick
-      ;JMP ++
+      JMP ++
     +:
     
       CLC
       ROR enemies_in_room
-    ;++:
+    ++:
     
     LDA #ACTOR_DATA_LENGTH
     CLC
