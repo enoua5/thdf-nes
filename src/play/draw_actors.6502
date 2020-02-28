@@ -358,12 +358,14 @@ check_if_draw_readout:
   LDX actor_data_pointer
   LDA actors+ACT_READOUT_TIMER,X
   BEQ +
+    SEC
+    DEC actors+ACT_READOUT_TIMER,X
+  
     ; yes digit display
     JSR set_readout_digs
     JSR set_readout_color
     JSR set_readout_y
     JSR set_readout_x
-    
     
     JMP ++
   +:

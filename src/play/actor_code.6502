@@ -195,11 +195,38 @@ do_actor_hit:
   LDA READOUT_TIME
   STA actors+ACT_READOUT_TIMER,X ; set the damage display timer
   LDA _hit_damage
+  CLC
+  ADC actors+ACT_READOUT_VALUE,X
   STA actors+ACT_READOUT_VALUE,X ; and value
   
   +mark_immune:
+  ; mask = 1 << _subrout_enemy_loop_counter
+  LDA #1
+  LDY _subrout_enemy_loop_counter
+  -:
+  BEQ +
+    ASL
+    DEY
+    JMP -
+  +:
+  STA _hit_bitmask
   
-  RTS
+  LDX _hit_attacker
+  LDA _hit_is_fire
+  BEQ +
+    LDA actors+ACT_FIRE_DATA,X
+    ORA _hit_bitmask
+    STA actors+ACT_FIRE_DATA,X
+    JMP ++
+  +:
+    LDA actors+ACT_SWORD_DATA,X
+    ORA _hit_bitmask
+    STA actors+ACT_SWORD_DATA,X
+  ++:
+  
+  ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+  RTS ; RETURN
+  ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
   
   +kill:
   
