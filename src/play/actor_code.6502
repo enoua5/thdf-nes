@@ -184,7 +184,6 @@ do_actor_hit:
   LDA actors+ACT_HP, X
   SEC
   SBC _hit_damage
-  LDA #69
   STA actors+ACT_HP, X
   
   ; if the health has gone to zero or lower, it is dead
