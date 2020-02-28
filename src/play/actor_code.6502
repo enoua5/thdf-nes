@@ -87,7 +87,7 @@ actor_tick:
   RTS
 
 run_ai:
-  LDA #0
+  LDA #B_BUTTON
   
   AND #%11001111 ; AI can't press start or select
   STA actor_control
@@ -184,6 +184,7 @@ do_actor_hit:
   LDA actors+ACT_HP, X
   SEC
   SBC _hit_damage
+  STA actors+ACT_HP, X
   
   ; if the health has gone to zero or lower, it is dead
   BCC +kill
