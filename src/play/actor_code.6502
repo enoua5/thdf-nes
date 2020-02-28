@@ -192,6 +192,11 @@ do_actor_hit:
   
   
   +disp:
+  LDA _subrout_enemy_loop_counter
+  BNE +
+    INC readout_update_req ; if the player takes damage, update the stat bar
+  +:
+  
   LDX _hit_defender
   LDA READOUT_TIME
   STA actors+ACT_READOUT_TIMER,X ; set the damage display timer
@@ -230,6 +235,8 @@ do_actor_hit:
   ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
   
   +kill:
+  LDA #0
+  STA actors+ACT_HP, X ; just to be nice in case of display
   
   RTS
 

@@ -643,6 +643,11 @@ MACRO shoot_fire
     JMP +end_of_shoot_fire_macro ; last fireball is still on screen
   +:
   
+    ; -1 fireball
+    DEC actors+ACT_MANA,X
+    ; update stats
+    INC readout_update_req
+  
     ; 0x40 frames until attack ends
     LDA #$40
     STA actors+ACT_ATTKTIME,X
