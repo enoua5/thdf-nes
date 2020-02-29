@@ -179,6 +179,11 @@ do_actor_hit:
   ADC #1 ; shift the range to (0, STR)
   STA _hit_damage
   
+  LDA _hit_is_fire
+  BEQ +
+    ASL _hit_damage ; fire does double damage
+  +:
+  
   ; apply damage
   LDX _hit_defender
   LDA actors+ACT_HP, X
@@ -237,6 +242,48 @@ do_actor_hit:
   +kill:
   LDA #0
   STA actors+ACT_HP, X ; just to be nice in case of display
+  
+  LDA _subrout_enemy_loop_counter
+  BNE +
+    ; player died :(
+    
+    ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+    RTS ; RETURN
+    ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+  +:
+  CMP NUMBER_OF_ACTORS-1
+  BNE +
+    ; boss died!
+    
+    ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+    RTS ; RETURN
+    ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+  +:
+  
+  ; mask = 1 << (_subrout_enemy_loop_counter - 1 + 4)
+  ; -1 because player isn't saved in room data, but is first in loop
+  ; +4 because enemies are saved on the left nibble of the byte
+  LDA #1
+  LDY _subrout_enemy_loop_counter
+  CLC
+  INY
+  INY
+  INY ; +3 = 4-1
+  -:
+  BEQ +
+    ASL
+    DEY
+    JMP -
+  +:
+  
+  EOR #$FF ; invert mask, we need it to &
+  STA _hit_bitmask
+  
+  ; mask out the dead enemy
+  LDX player_room
+  LDA dungeon_map,X
+  AND _hit_bitmask
+  STA dungeon_map,X
   
   RTS
 
