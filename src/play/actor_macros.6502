@@ -197,6 +197,7 @@ MACRO buy_stuff
       +:
       
       ; take away money
+      
       CLC 
       ADC #1
       STA generic_bytes+88 ; save cost because we need to load current money
@@ -901,6 +902,8 @@ MACRO check_hit __DATA_OFFSET, __HIT_SPRITE, __IS_FIRE
   LDA player_room
   CMP boss_room
   BNE +
+  LDA boss_alive
+  BEQ +
     LDA _subrout_enemies_in_room
     ORA #%00010000
     STA _subrout_enemies_in_room

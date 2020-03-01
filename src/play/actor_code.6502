@@ -31,6 +31,8 @@ actor_tick:
   LDA player_room
   CMP boss_room
   BNE +
+  LDA boss_alive
+  BEQ +
     LDA enemies_in_room
     ORA #%00010000
     STA enemies_in_room
@@ -246,7 +248,7 @@ do_actor_hit:
   LDA _subrout_enemy_loop_counter
   BNE +
     ; player died :(
-    
+    JSR o_god_o_fuk
     ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
     RTS ; RETURN
     ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -254,7 +256,7 @@ do_actor_hit:
   CMP NUMBER_OF_ACTORS-1
   BNE +
     ; boss died!
-    
+    JSR boss_defeated
     ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
     RTS ; RETURN
     ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -323,3 +325,9 @@ spawn_actor:
   
 
   .incsrc "src/play/draw_actors.6502"
+  
+boss_defeated:
+  RTS
+  
+o_god_o_fuk:
+  RTS

@@ -164,6 +164,9 @@ gen_dungeon:
   LDA #%00000001
   STA dungeon_map, X
   
+  LDA #1
+  STA boss_alive
+  
   LDA #2
   STA dun_gen
   

@@ -1,4 +1,4 @@
-_enemy_loop_counter .equ generic_bytes+#$45
+_enemy_loop_counter .equ generic_bytes+#89
 NUMBER_OF_ACTORS .equ #6
 
 .incsrc "src/play/stat_readout.6502"

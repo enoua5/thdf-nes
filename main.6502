@@ -110,6 +110,8 @@ MODE_DEATH = 3
                               ;          111 max hp
                               ;    [7] COSTS
                               ;          0: coin, 1: gem
+                              
+    boss_alive .dsb 1
                      
   .ende
   
