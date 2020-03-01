@@ -327,6 +327,13 @@ spawn_actor:
   .incsrc "src/play/draw_actors.6502"
   
 boss_defeated:
+
+  LDA #0
+  STA boss_alive
+  
+  LDA #1
+  STA room_update_req
+  
   RTS
   
 o_god_o_fuk:

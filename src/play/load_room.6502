@@ -513,6 +513,15 @@ draw_fountain:
     LDY #$60 ;first tile of fountain
   +:
   
+  ; check for stairs
+  CPX boss_room
+  BNE +
+  LDA boss_alive
+  BNE +
+    LDY #$40 ; first tile of stair
+  
+  +:
+  
   STY generic_bytes+0
   begin_nt_buffer_write SCREEN_MID, FOUNTAIN_L1
     write_to_nt_buffer generic_bytes+0

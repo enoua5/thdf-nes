@@ -10,6 +10,8 @@ draw_actors:
   LDA player_room
   CMP boss_room
   BNE +
+  LDA boss_alive
+  BEQ +
     LDA enemies_in_room
     ORA #%00010000
     STA enemies_in_room
