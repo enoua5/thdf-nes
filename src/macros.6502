@@ -130,6 +130,7 @@ STAT_HEART_X .equ #32
 STAT_HEART_MAX_X .equ #(32+48)
 STAT_MAGIC_X .equ #(32+(48*2))
 STAT_MAGIC_MAX_X .equ #(32+(48*3))
+STAT_FLOOR_X .equ #(32+(48*4))
 STAT_STR_X .equ #32
 STAT_AGL_X .equ #(32+48)
 STAT_DEF_X .equ #(32+(48*2))
@@ -141,6 +142,7 @@ MACRO make_offer
   LDA #0
   STA current_offer_amounts
   STA current_offer_type
+  STA standing_on_stairs
     
   check_onChest
   BEQ +
@@ -170,6 +172,14 @@ MACRO make_offer
     JMP +offer_made
   +:
   
+  check_onStairs
+  BEQ +
+    LDA #1
+    STA standing_on_stairs
+    
+    JMP +offer_made
+  +:
+  
   
   check_onGhost
   BEQ +
@@ -190,6 +200,38 @@ MACRO make_offer
   +:
   
   +offer_made:
+  
+  LDA standing_on_stairs
+  BEQ +
+    LDA STAT_FLOOR_X
+    
+    STA $0200+OFFER_SPRITE_OAM_LOCATION+SPRITE_DATA_X
+    CLC
+    ADC #8
+    STA $0200+OFFER_SPRITE_OAM_LOCATION+SPRITE_DATA_X+4
+    CLC
+    ADC #8
+    STA $0200+OFFER_SPRITE_OAM_LOCATION+SPRITE_DATA_X+8
+    
+    LDA STAT_TOP_ROW_Y
+    STA $0200+OFFER_SPRITE_OAM_LOCATION+SPRITE_DATA_Y
+    STA $0200+OFFER_SPRITE_OAM_LOCATION+SPRITE_DATA_Y+4
+    STA $0200+OFFER_SPRITE_OAM_LOCATION+SPRITE_DATA_Y+8
+    
+    ;LDA #$2a ; "+"
+    ;STA $0200+OFFER_SPRITE_OAM_LOCATION+SPRITE_DATA_I
+    LDA #0
+    STA $0200+OFFER_SPRITE_OAM_LOCATION+SPRITE_DATA_I+4
+    LDA #1
+    STA $0200+OFFER_SPRITE_OAM_LOCATION+SPRITE_DATA_I+8
+    
+    LDA #$FF
+    STA $0200+OFFER_SPRITE_OAM_LOCATION+SPRITE_DATA_Y+12
+    STA $0200+OFFER_SPRITE_OAM_LOCATION+SPRITE_DATA_Y+16
+    STA $0200+OFFER_SPRITE_OAM_LOCATION+SPRITE_DATA_Y+20
+    
+    JMP +offer_displayed
+  +:
   
   LDA current_offer_type
   AND #%01000000 ; make sure the offer exists

@@ -336,5 +336,16 @@ boss_defeated:
   
   RTS
   
+level_up:
+  INC player_floor
+    
+  JSR gen_dungeon
+  
+  LDA #1
+  STA room_update_req
+
+  RTS
+
+
 o_god_o_fuk:
   RTS

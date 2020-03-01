@@ -23,7 +23,7 @@ MACRO check_onChest
   +on_chest:
 ENDM
 
-FOUNTAIN_RIGHT_LOCATION_X .equ #140
+FOUNTAIN_RIGHT_LOCATION_X .equ #148
 FOUNTAIN_TOP_LOCATION_Y .equ #80
 FOUNTAIN_LEFT_LOCATION_X .equ #116
 FOUNTAIN_BOTTOM_LOCATION_Y .equ #108
@@ -56,6 +56,38 @@ MACRO check_onFountain
   +not_on_fountain:
   LDA #0
   +on_fountain:
+ENDM
+
+MACRO check_onStairs
+  LDA player_room
+  CMP boss_room
+  BNE +not_on_stairs
+  
+  LDA boss_alive
+  BNE +not_on_stairs
+
+  LDA actors+ACT_X
+  CMP FOUNTAIN_RIGHT_LOCATION_X
+  BCS +not_on_stairs
+  
+  LDA actors+ACT_Y
+  CMP FOUNTAIN_TOP_LOCATION_Y
+  BCC +not_on_stairs
+
+  LDA actors+ACT_X
+  CMP FOUNTAIN_LEFT_LOCATION_X
+  BCC +not_on_stairs
+  
+  LDA actors+ACT_Y
+  CMP FOUNTAIN_BOTTOM_LOCATION_Y
+  BCS +not_on_stairs
+  
+  LDA #1
+  JMP +on_stairs
+  
+  +not_on_stairs:
+  LDA #0
+  +on_stairs:
 ENDM
 
 GHOST_LOCATION_Y .equ #48
@@ -144,6 +176,12 @@ MACRO buy_stuff
   AND SELECT_BUTTON
   BNE +
     JMP +no_purchase
+  +:
+  
+  LDA standing_on_stairs
+  BEQ +
+    JSR level_up
+    JMP +done_buying
   +:
   
   LDA current_offer_type
