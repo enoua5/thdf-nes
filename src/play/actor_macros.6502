@@ -396,6 +396,8 @@ MACRO buy_stuff
   LDA #1
   STA readout_update_req
   +no_purchase:
+  
+  LDX actor_data_pointer
 ENDM
 
 TOP_WALL_HEIGHT .equ #32

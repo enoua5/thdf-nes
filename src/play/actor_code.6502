@@ -344,8 +344,81 @@ level_up:
   LDA #1
   STA room_update_req
 
+
+  
+  LDX #ACTOR_DATA_LENGTH
+  LDA #1
+  STA _subrout_enemy_loop_counter
+  -:
+    JSR upgrade_enemy
+  
+    LDA _subrout_actor_data_pointer
+    CLC
+    ADC #ACTOR_DATA_LENGTH
+    TAX
+    
+    CLC
+    INC _subrout_enemy_loop_counter
+    LDA _subrout_enemy_loop_counter
+    CMP NUMBER_OF_ACTORS
+    BNE -
+  +:
+  
+
+
   RTS
 
+MACRO increase_stat _stat
+  JSR rng
+  LDA rng_seed+0
+  AND #$0F
+  STA generic_bytes+128
+  
+  JSR rng
+  LDA rng_seed+0
+  AND #$0F
+  
+  CMP generic_bytes+128
+  BCC +
+    STA generic_bytes+128
+  +:
+  
+  LDA _stat
+  CMP ACT_MANAMAX
+  BNE +
+    LDA generic_bytes+128
+    AND #$02
+    STA generic_bytes+128
+  +:
+  
+  
+  LDX _subrout_actor_data_pointer
+  LDA actors+_stat,X
+  BNE +
+    LDA player_floor
+    CMP #3
+    BCS +
+      LDA #0
+      STA  generic_bytes+128
+  +:
+  
+  
+  LDA generic_bytes+128
+  CLC
+  ADC actors+_stat,X
+  STA actors+_stat,X
+ENDM
+upgrade_enemy:
+  STX _subrout_actor_data_pointer
+  
+  increase_stat ACT_HPMAX
+  increase_stat ACT_MANAMAX
+  increase_stat ACT_STR
+  increase_stat ACT_AGL
+  increase_stat ACT_DEF
+  
+  
+  RTS
 
 o_god_o_fuk:
   RTS
