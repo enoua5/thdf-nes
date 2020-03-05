@@ -3,7 +3,7 @@
 ; constants
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-PRG_COUNT = 1
+PRG_COUNT = 2
 
 MODE_TITLE = 0
 MODE_CHAR_CREATE = 1
