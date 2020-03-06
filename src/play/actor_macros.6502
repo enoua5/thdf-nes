@@ -178,6 +178,14 @@ MACRO buy_stuff
     JMP +no_purchase
   +:
   
+  LDX player_room
+  LDA dungeon_map,X
+  AND #%11110000
+  BEQ +
+    JMP +no_purchase
+  +:
+  LDX actor_data_pointer
+  
   LDA standing_on_stairs
   BEQ +
     JSR level_up

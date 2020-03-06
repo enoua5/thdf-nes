@@ -143,6 +143,13 @@ MACRO make_offer
   STA current_offer_amounts
   STA current_offer_type
   STA standing_on_stairs
+  
+  LDX player_room
+  LDA dungeon_map,X
+  AND #%11110000
+  BEQ +
+    JMP +no_offer
+  +:
     
   check_onChest
   BEQ +
