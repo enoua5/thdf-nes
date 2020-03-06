@@ -293,8 +293,11 @@ do_actor_hit:
   STA dungeon_map,X
   
   ; if the room is now empty of enemies, redraw the room
-  LDA #1
-  STA room_update_req
+  AND #%11110000
+  BNE +
+    LDA #1
+    STA room_update_req
+  +:
   
   RTS
 
