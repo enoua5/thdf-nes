@@ -121,7 +121,7 @@ _end_nt_buffer_write:
   RTS
   
 byte_to_dec:
-  LDA byte_to_dec_in
+  LDA arguments
   
   ;100's place
   LDX #0
@@ -133,7 +133,7 @@ byte_to_dec:
       SBC #100
     JMP -
   +:
-  STX byte_to_dec_out+0
+  STX returns+0
   
   ;10's place
   LDX #0
@@ -145,9 +145,86 @@ byte_to_dec:
       SBC #10
     JMP -
   +:
-  STX byte_to_dec_out+1
+  STX returns+1
   
   ;1's place
-  STA byte_to_dec_out+2
+  STA returns+2
+  
+  RTS
+  
+check_sprite_overlap:
+  LDX arguments+0
+  LDA $0200,X ; sprite 1 Y
+  STA returns+0
+  INX
+  INX
+  INX
+  LDA $0200,X ; sprite 1 X
+  STA returns+1
+  
+  LDX arguments+1
+  LDA $0200,X ; sprite 2 Y
+  STA returns+2
+  INX
+  INX
+  INX
+  LDA $0200,X ; sprite 2 X
+  STA returns+3
+
+  ;;;;;;;;;;;;;;
+  
+  
+  ; x1>x2+8
+  LDA returns+3
+  CLC
+  ADC #8
+  CMP returns+1
+  BCC +no_overlap
+  
+  ; x2>x1+8
+  LDA returns+1
+  CLC
+  ADC #8
+  CMP returns+3
+  BCC +no_overlap
+  
+  ; y1>y2+8
+  LDA returns+2
+  CLC
+  ADC #8
+  CMP returns+0
+  BCC +no_overlap
+  
+  ; y2>y1+8
+  LDA returns+0
+  CLC
+  ADC #8
+  CMP returns+2
+  BCC +no_overlap
+  
+  +overlap:
+  LDA #1
+  STA returns+0
+  RTS
+  +no_overlap:
+  LDA #0
+  STA returns+0
+  RTS
+  
+modulo:
+  ; check for divide by 0
+  LDA arguments+1
+  BNE +
+    DEC arguments+1 ; set to 255.
+                    ; This makes sense in the context of this game
+                    ; as % 0 happens when the player maxes out a score
+  +:
+  LDA arguments+0
+  SEC
+  -:
+    SBC arguments+1
+  BCS -
+  ADC arguments+1
+  STA returns+0
   
   RTS

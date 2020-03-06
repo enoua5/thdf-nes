@@ -119,3 +119,384 @@ MACRO fill_ind_stats dest, source
   LDA cc_stat_options+16, Y
   STA dest, X
 ENDM
+
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+; GAMEPLAY
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+OFFER_SPRITE_OAM_LOCATION .equ #(48*4)
+STAT_HEART_X .equ #32
+STAT_HEART_MAX_X .equ #(32+48)
+STAT_MAGIC_X .equ #(32+(48*2))
+STAT_MAGIC_MAX_X .equ #(32+(48*3))
+STAT_FLOOR_X .equ #(32+(48*4))
+STAT_STR_X .equ #32
+STAT_AGL_X .equ #(32+48)
+STAT_DEF_X .equ #(32+(48*2))
+STAT_COIN_X .equ #(32+(48*3))
+STAT_GEM_X .equ #(32+(48*4))
+STAT_TOP_ROW_Y .equ #200
+STAT_BOTTOM_ROW_Y .equ #216
+MACRO make_offer
+  LDA #0
+  STA current_offer_amounts
+  STA current_offer_type
+  STA standing_on_stairs
+    
+  check_onChest
+  BEQ +
+    LDA #%11000000
+    STA current_offer_type
+    
+    LDA offerings+0
+    AND #%00001111
+    STA current_offer_amounts
+    
+    JMP +offer_made
+  +:
+  
+  check_onFountain
+  BEQ +
+    LDA offerings+0 ; get the offer type from the room data
+    AND #%00110000
+    LSR
+    LSR
+    LSR ; move it to where it needs to be in current offer data
+    ORA #%01001001; add in other metadata (existance, fountain offers, takes gems)
+    STA current_offer_type
+    
+    LDA offerings+2
+    STA current_offer_amounts
+  
+    JMP +offer_made
+  +:
+  
+  check_onStairs
+  BEQ +
+    LDA #1
+    STA standing_on_stairs
+    
+    JMP +offer_made
+  +:
+  
+  
+  check_onGhost
+  BEQ +
+    LDA offerings+0 ; get the offer type from the room data
+    AND #%11000000
+    LSR
+    LSR
+    LSR
+    LSR
+    LSR ; move it to where it needs to be in current offer data
+    ORA #%01000000; add in other metadata (just flag existance)
+    STA current_offer_type
+    
+    LDA offerings+1
+    STA current_offer_amounts
+  
+    JMP +offer_made
+  +:
+  
+  +offer_made:
+  
+  LDA standing_on_stairs
+  BEQ +
+    LDA STAT_FLOOR_X
+    
+    STA $0200+OFFER_SPRITE_OAM_LOCATION+SPRITE_DATA_X
+    CLC
+    ADC #8
+    STA $0200+OFFER_SPRITE_OAM_LOCATION+SPRITE_DATA_X+4
+    CLC
+    ADC #8
+    STA $0200+OFFER_SPRITE_OAM_LOCATION+SPRITE_DATA_X+8
+    
+    LDA STAT_TOP_ROW_Y
+    STA $0200+OFFER_SPRITE_OAM_LOCATION+SPRITE_DATA_Y
+    STA $0200+OFFER_SPRITE_OAM_LOCATION+SPRITE_DATA_Y+4
+    STA $0200+OFFER_SPRITE_OAM_LOCATION+SPRITE_DATA_Y+8
+    
+    ;LDA #$2a ; "+"
+    ;STA $0200+OFFER_SPRITE_OAM_LOCATION+SPRITE_DATA_I
+    LDA #0
+    STA $0200+OFFER_SPRITE_OAM_LOCATION+SPRITE_DATA_I+4
+    LDA #1
+    STA $0200+OFFER_SPRITE_OAM_LOCATION+SPRITE_DATA_I+8
+    
+    LDA #$FF
+    STA $0200+OFFER_SPRITE_OAM_LOCATION+SPRITE_DATA_Y+12
+    STA $0200+OFFER_SPRITE_OAM_LOCATION+SPRITE_DATA_Y+16
+    STA $0200+OFFER_SPRITE_OAM_LOCATION+SPRITE_DATA_Y+20
+    
+    JMP +offer_displayed
+  +:
+  
+  LDA current_offer_type
+  AND #%01000000 ; make sure the offer exists
+  BNE +
+    JMP +no_offer
+  +:
+    LDA current_offer_type
+    AND #%10000000 ; is it a free treasure?
+    BEQ +asdfasdf
+      LDA STAT_COIN_X
+      STA $0200+OFFER_SPRITE_OAM_LOCATION+SPRITE_DATA_X
+      CLC
+      ADC #8
+      STA $0200+OFFER_SPRITE_OAM_LOCATION+SPRITE_DATA_X+4
+      CLC
+      ADC #8
+      STA $0200+OFFER_SPRITE_OAM_LOCATION+SPRITE_DATA_X+8
+      
+      LDA STAT_BOTTOM_ROW_Y
+      STA $0200+OFFER_SPRITE_OAM_LOCATION+SPRITE_DATA_Y
+      STA $0200+OFFER_SPRITE_OAM_LOCATION+SPRITE_DATA_Y+4
+      STA $0200+OFFER_SPRITE_OAM_LOCATION+SPRITE_DATA_Y+8
+      
+      LDA #$FF
+      STA $0200+OFFER_SPRITE_OAM_LOCATION+SPRITE_DATA_Y+12
+      STA $0200+OFFER_SPRITE_OAM_LOCATION+SPRITE_DATA_Y+16
+      STA $0200+OFFER_SPRITE_OAM_LOCATION+SPRITE_DATA_Y+20
+      
+      JMP +write_values
+    +asdfasdf:
+    
+    ; put positive in correct place
+    LDA current_offer_type
+    AND #%00001110
+    LSR
+    CMP #0
+    BNE +next_type
+      LDA STAT_GEM_X
+      STA $0200+OFFER_SPRITE_OAM_LOCATION+SPRITE_DATA_X
+      CLC
+      ADC #8
+      STA $0200+OFFER_SPRITE_OAM_LOCATION+SPRITE_DATA_X+4
+      CLC
+      ADC #8
+      STA $0200+OFFER_SPRITE_OAM_LOCATION+SPRITE_DATA_X+8
+      
+      LDA STAT_BOTTOM_ROW_Y
+      STA $0200+OFFER_SPRITE_OAM_LOCATION+SPRITE_DATA_Y
+      STA $0200+OFFER_SPRITE_OAM_LOCATION+SPRITE_DATA_Y+4
+      STA $0200+OFFER_SPRITE_OAM_LOCATION+SPRITE_DATA_Y+8
+      
+      JMP +place_cost
+    +next_type:
+    
+    CMP #1
+    BNE +next_type
+      LDA STAT_HEART_X
+      STA $0200+OFFER_SPRITE_OAM_LOCATION+SPRITE_DATA_X
+      CLC
+      ADC #8
+      STA $0200+OFFER_SPRITE_OAM_LOCATION+SPRITE_DATA_X+4
+      CLC
+      ADC #8
+      STA $0200+OFFER_SPRITE_OAM_LOCATION+SPRITE_DATA_X+8
+      
+      LDA STAT_TOP_ROW_Y
+      STA $0200+OFFER_SPRITE_OAM_LOCATION+SPRITE_DATA_Y
+      STA $0200+OFFER_SPRITE_OAM_LOCATION+SPRITE_DATA_Y+4
+      STA $0200+OFFER_SPRITE_OAM_LOCATION+SPRITE_DATA_Y+8
+      
+      JMP +place_cost
+    +next_type:
+    
+    CMP #2
+    BNE +next_type
+      LDA STAT_MAGIC_X
+      STA $0200+OFFER_SPRITE_OAM_LOCATION+SPRITE_DATA_X
+      CLC
+      ADC #8
+      STA $0200+OFFER_SPRITE_OAM_LOCATION+SPRITE_DATA_X+4
+      CLC
+      ADC #8
+      STA $0200+OFFER_SPRITE_OAM_LOCATION+SPRITE_DATA_X+8
+      
+      LDA STAT_TOP_ROW_Y
+      STA $0200+OFFER_SPRITE_OAM_LOCATION+SPRITE_DATA_Y
+      STA $0200+OFFER_SPRITE_OAM_LOCATION+SPRITE_DATA_Y+4
+      STA $0200+OFFER_SPRITE_OAM_LOCATION+SPRITE_DATA_Y+8
+      
+      JMP +place_cost
+    +next_type:
+    
+    CMP #3
+    BNE +next_type
+      LDA STAT_AGL_X
+      STA $0200+OFFER_SPRITE_OAM_LOCATION+SPRITE_DATA_X
+      CLC
+      ADC #8
+      STA $0200+OFFER_SPRITE_OAM_LOCATION+SPRITE_DATA_X+4
+      CLC
+      ADC #8
+      STA $0200+OFFER_SPRITE_OAM_LOCATION+SPRITE_DATA_X+8
+      
+      LDA STAT_BOTTOM_ROW_Y
+      STA $0200+OFFER_SPRITE_OAM_LOCATION+SPRITE_DATA_Y
+      STA $0200+OFFER_SPRITE_OAM_LOCATION+SPRITE_DATA_Y+4
+      STA $0200+OFFER_SPRITE_OAM_LOCATION+SPRITE_DATA_Y+8
+      
+      JMP +place_cost
+    +next_type:
+    
+    CMP #4
+    BNE +next_type
+      LDA STAT_DEF_X
+      STA $0200+OFFER_SPRITE_OAM_LOCATION+SPRITE_DATA_X
+      CLC
+      ADC #8
+      STA $0200+OFFER_SPRITE_OAM_LOCATION+SPRITE_DATA_X+4
+      CLC
+      ADC #8
+      STA $0200+OFFER_SPRITE_OAM_LOCATION+SPRITE_DATA_X+8
+      
+      LDA STAT_BOTTOM_ROW_Y
+      STA $0200+OFFER_SPRITE_OAM_LOCATION+SPRITE_DATA_Y
+      STA $0200+OFFER_SPRITE_OAM_LOCATION+SPRITE_DATA_Y+4
+      STA $0200+OFFER_SPRITE_OAM_LOCATION+SPRITE_DATA_Y+8
+      
+      JMP +place_cost
+    +next_type:
+    
+    CMP #5
+    BNE +next_type
+      LDA STAT_STR_X
+      STA $0200+OFFER_SPRITE_OAM_LOCATION+SPRITE_DATA_X
+      CLC
+      ADC #8
+      STA $0200+OFFER_SPRITE_OAM_LOCATION+SPRITE_DATA_X+4
+      CLC
+      ADC #8
+      STA $0200+OFFER_SPRITE_OAM_LOCATION+SPRITE_DATA_X+8
+      
+      LDA STAT_BOTTOM_ROW_Y
+      STA $0200+OFFER_SPRITE_OAM_LOCATION+SPRITE_DATA_Y
+      STA $0200+OFFER_SPRITE_OAM_LOCATION+SPRITE_DATA_Y+4
+      STA $0200+OFFER_SPRITE_OAM_LOCATION+SPRITE_DATA_Y+8
+      
+      JMP +place_cost
+    +next_type:
+    
+    CMP #6
+    BNE +next_type
+      LDA STAT_MAGIC_MAX_X
+      STA $0200+OFFER_SPRITE_OAM_LOCATION+SPRITE_DATA_X
+      CLC
+      ADC #8
+      STA $0200+OFFER_SPRITE_OAM_LOCATION+SPRITE_DATA_X+4
+      CLC
+      ADC #8
+      STA $0200+OFFER_SPRITE_OAM_LOCATION+SPRITE_DATA_X+8
+      
+      LDA STAT_TOP_ROW_Y
+      STA $0200+OFFER_SPRITE_OAM_LOCATION+SPRITE_DATA_Y
+      STA $0200+OFFER_SPRITE_OAM_LOCATION+SPRITE_DATA_Y+4
+      STA $0200+OFFER_SPRITE_OAM_LOCATION+SPRITE_DATA_Y+8
+      
+      JMP +place_cost
+    +next_type:
+    
+    CMP #7
+    BNE +next_type
+      LDA STAT_HEART_MAX_X
+      STA $0200+OFFER_SPRITE_OAM_LOCATION+SPRITE_DATA_X
+      CLC
+      ADC #8
+      STA $0200+OFFER_SPRITE_OAM_LOCATION+SPRITE_DATA_X+4
+      CLC
+      ADC #8
+      STA $0200+OFFER_SPRITE_OAM_LOCATION+SPRITE_DATA_X+8
+      
+      LDA STAT_TOP_ROW_Y
+      STA $0200+OFFER_SPRITE_OAM_LOCATION+SPRITE_DATA_Y
+      STA $0200+OFFER_SPRITE_OAM_LOCATION+SPRITE_DATA_Y+4
+      STA $0200+OFFER_SPRITE_OAM_LOCATION+SPRITE_DATA_Y+8
+      
+      JMP +place_cost
+    +next_type:
+    
+    
+    +place_cost:
+    ; put negative in correct place
+    LDA current_offer_type
+    AND #%00000001
+    BNE +next_type
+      LDA STAT_COIN_X
+      STA $0200+OFFER_SPRITE_OAM_LOCATION+SPRITE_DATA_X+12
+      CLC
+      ADC #8
+      STA $0200+OFFER_SPRITE_OAM_LOCATION+SPRITE_DATA_X+16
+      CLC
+      ADC #8
+      STA $0200+OFFER_SPRITE_OAM_LOCATION+SPRITE_DATA_X+20
+      
+      LDA STAT_BOTTOM_ROW_Y
+      STA $0200+OFFER_SPRITE_OAM_LOCATION+SPRITE_DATA_Y+12
+      STA $0200+OFFER_SPRITE_OAM_LOCATION+SPRITE_DATA_Y+16
+      STA $0200+OFFER_SPRITE_OAM_LOCATION+SPRITE_DATA_Y+20
+      
+      JMP +write_values
+    +next_type:
+    
+      LDA STAT_GEM_X
+      STA $0200+OFFER_SPRITE_OAM_LOCATION+SPRITE_DATA_X+12
+      CLC
+      ADC #8
+      STA $0200+OFFER_SPRITE_OAM_LOCATION+SPRITE_DATA_X+16
+      CLC
+      ADC #8
+      STA $0200+OFFER_SPRITE_OAM_LOCATION+SPRITE_DATA_X+20
+      
+      LDA STAT_BOTTOM_ROW_Y
+      STA $0200+OFFER_SPRITE_OAM_LOCATION+SPRITE_DATA_Y+12
+      STA $0200+OFFER_SPRITE_OAM_LOCATION+SPRITE_DATA_Y+16
+      STA $0200+OFFER_SPRITE_OAM_LOCATION+SPRITE_DATA_Y+20
+      
+    +write_values:
+    ; write values
+    LDA current_offer_amounts
+    AND #$0F
+    CLC
+    ADC #1
+    STA arguments+0
+    JSR byte_to_dec
+    LDA returns+1
+    STA $0200+OFFER_SPRITE_OAM_LOCATION+SPRITE_DATA_I+4
+    LDA returns+2
+    STA $0200+OFFER_SPRITE_OAM_LOCATION+SPRITE_DATA_I+8
+    
+    LDA current_offer_amounts
+    AND #$F0
+    LSR
+    LSR
+    LSR
+    LSR
+    CLC
+    ADC #1
+    STA arguments+0
+    JSR byte_to_dec
+    LDA returns+1
+    STA $0200+OFFER_SPRITE_OAM_LOCATION+SPRITE_DATA_I+16
+    LDA returns+2
+    STA $0200+OFFER_SPRITE_OAM_LOCATION+SPRITE_DATA_I+20
+    
+    
+    JMP +offer_displayed
+  +no_offer:
+  
+  ; no offer. hide it
+  
+  LDA #$ff
+  STA $0200+OFFER_SPRITE_OAM_LOCATION+SPRITE_DATA_Y
+  STA $0200+OFFER_SPRITE_OAM_LOCATION+SPRITE_DATA_Y+4
+  STA $0200+OFFER_SPRITE_OAM_LOCATION+SPRITE_DATA_Y+8
+  STA $0200+OFFER_SPRITE_OAM_LOCATION+SPRITE_DATA_Y+12
+  STA $0200+OFFER_SPRITE_OAM_LOCATION+SPRITE_DATA_Y+16
+  STA $0200+OFFER_SPRITE_OAM_LOCATION+SPRITE_DATA_Y+20
+  
+  +offer_displayed:
+ENDM

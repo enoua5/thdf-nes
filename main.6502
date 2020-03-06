@@ -3,7 +3,7 @@
 ; constants
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-PRG_COUNT = 1
+PRG_COUNT = 2
 
 MODE_TITLE = 0
 MODE_CHAR_CREATE = 1
@@ -25,11 +25,12 @@ MODE_DEATH = 3
     rng_seed .dsb 2
     buttons .dsb 1
     button_ondown .dsb 1
+    paused .dsb 1
     generic_pointer .dsb 2  
     draw_req .dsb 1
     register_backup .dsb 3
-    byte_to_dec_in .dsb 1
-    byte_to_dec_out .dsb 3
+    arguments .dsb 4
+    returns .dsb 4
     nt_buf_in_hi .dsb 1
     nt_buf_in_lo .dsb 1
     nt_buf_in_dt .dsb 1
@@ -72,11 +73,47 @@ MODE_DEATH = 3
     actor_data_pointer .dsb 1
     actor_sprite_pointer .dsb 1
     actor_sprite_rom_pointer .dsb 1
+    actor_control .dsb 1
     
     .incsrc "src/actor_vars.6502"
     
     readout_update_req .dsb 1
     room_update_req .dsb 1
+    
+    can_move_up_room .dsb 1
+    can_move_left_room .dsb 1
+    can_move_right_room .dsb 1
+    can_move_down_room .dsb 1
+    
+                     ; +0         +1        +2
+    offerings .dsb 3 ; 00|00|0000 0000|0000 0000|0000
+                     ; +0[0-1] Spirit resource. 00: gems, 01: healing, 10: mana, 11: agility
+                     ; +0[2-3] Fountain resource. 00: defence, 01: strength, 10: max magic, 11: max hp
+                     ; +0[4-7] Chest ammount
+                     ;
+                     ; +1[0-3] Spirit offer cost
+                     ; +1[4-7] Spirit offer amount
+                     ;
+                     ; +2[0-3] Fountain offer
+                     ; +2[4-7] Fountain offer amount cost
+    current_offer_amounts .dsb 1 ; [0-3] cost [4-7] amount
+    current_offer_type .dsb 1 ;    [0] IS TREASURE
+                              ;    [1] OFFER EXISTS
+                              ;    [4-6] GIVES
+                              ;          000 gems
+                              ;          001 healing
+                              ;          010 mana
+                              ;          011 agl
+                              ;          100 def
+                              ;          101 str
+                              ;          110 max mag
+                              ;          111 max hp
+                              ;    [7] COSTS
+                              ;          0: coin, 1: gem
+    standing_on_stairs .dsb 1
+                              
+    boss_alive .dsb 1
+                     
   .ende
   
   .enum $0700
@@ -203,11 +240,10 @@ Reset:
     end_main:
       LDA #1
       STA waiting_for_frame
-      
       -:
         LDA waiting_for_frame
-        CMP #0
       BNE -
+      
       JMP main
 
 NMI:
@@ -215,6 +251,11 @@ NMI:
   STA register_backup
   STX register_backup+1
   STY register_backup+2
+  
+  LDA 255
+  CLC
+  ADC #1
+  STA 255
   
   LDA #0
   STA $2001
@@ -254,7 +295,7 @@ NMI:
   STA $2003  ; set the low byte (00) of the RAM address for OAMDMA
   LDA #$02
   STA $4014  ; set the high byte (02) of the RAM address, start the transfer
-  
+    
   LDA register_backup
   LDX register_backup+1
   LDY register_backup+2

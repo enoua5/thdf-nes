@@ -1,65 +1,99 @@
+_enemy_loop_counter .equ generic_bytes+#89
+NUMBER_OF_ACTORS .equ #6
+
 .incsrc "src/play/stat_readout.6502"
 .incsrc "src/play/load_room.6502"
 .incsrc "src/play/actor_code.6502"
 
 play_code:
-  JSR update_stat_readout
-  JSR draw_room
-  JSR actor_tick
-  JSR draw_actors
+  LDA paused
+  BEQ +
+    JMP +jumped_too_far
+  +:
+    JSR update_stat_readout
+    JSR draw_room
+    JSR actor_tick
+    JSR draw_actors
+    
+    JSR check_room_move
+    
+    
+    make_offer ; idk why I wrote this one as a macro.
+    JMP ++
+   +jumped_too_far:
+    LDA ppu_mask
+    ORA #%00000001 ; grey-scale to indicate paused
+    STA ppu_mask
   
-  ; test -- DO NOT LEAVE IN FINAL
-  check_ondown UP_BUTTON
-  BEQ +
-    LDA #%11110000
-    AND player_room
-    CMP #%11110000
-    BEQ +
-      LDA player_room
-      ADC #%00010000
-      STA player_room
+    LDA button_ondown
+    AND START_BUTTON
+    BEQ ++
+      LDA #0
+      STA paused
       
-      LDA #1
-      STA room_update_req
+      LDA ppu_mask
+      AND #%11111110 ; undo grey-scale
+      STA ppu_mask
+  ++:
+  RTS
+
+check_room_move:
+
+  LDA actors+ACT_X
+  CMP #8
+  BCS +
+    LDA #240
+    STA actors+ACT_X
+    
+    CLC
+    DEC player_room
+    
+    LDA #1
+    STA room_update_req
   +:
-  check_ondown DOWN_BUTTON
-  BEQ +
-    LDA #%11110000
-    AND player_room
-    CMP #%00000000
-    BEQ +
-      LDA player_room
-      SBC #%00010000
-      STA player_room
-      
-      LDA #1
-      STA room_update_req
+  
+  LDA actors+ACT_X
+  CMP #248
+  BCC +
+    LDA #16
+    STA actors+ACT_X
+    
+    CLC
+    INC player_room
+    
+    LDA #1
+    STA room_update_req
   +:
-  check_ondown LEFT_BUTTON
-  BEQ +
-    LDA #%00001111
-    AND player_room
-    CMP #%00000000
-    BEQ +
-      LDA player_room
-      SBC #%00000001
-      STA player_room
-      
-      LDA #1
-      STA room_update_req
+  
+  LDA actors+ACT_Y
+  CMP #8
+  BCS +
+    LDA #170
+    STA actors+ACT_Y
+    
+    LDA player_room
+    CLC
+    ADC #$10
+    STA player_room
+    
+    LDA #1
+    STA room_update_req
   +:
-  check_ondown RIGHT_BUTTON
-  BEQ +
-    LDA #%00001111
-    AND player_room
-    CMP #%00001111
-    BEQ +
-      LDA player_room
-      ADC #%00000001
-      STA player_room
-      
-      LDA #1
-      STA room_update_req
+  
+  LDA actors+ACT_Y
+  CMP #178
+  BCC +
+    LDA #16
+    STA actors+ACT_Y
+    
+    LDA player_room
+    SEC
+    SBC #$10
+    STA player_room
+    
+    LDA #1
+    STA room_update_req
   +:
-  ; end test
+  
+  
   RTS

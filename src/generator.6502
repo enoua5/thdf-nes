@@ -21,6 +21,9 @@ gen_room_feats:
   
   JSR rng ;generate enemies
   AND #%11110000
+  JSR rng ;less enemies
+  AND rng_seed
+  
   LDX gen_working_room
   ORA dungeon_map, x 
   STA dungeon_map, x
@@ -47,7 +50,7 @@ gen_room_feats:
   +:
   ;treasure
   JSR rng
-  AND #%00000001
+  AND #%00000111
   CMP #0
   BNE +
     LDX gen_working_room
@@ -160,6 +163,9 @@ gen_dungeon:
   STX boss_room
   LDA #%00000001
   STA dungeon_map, X
+  
+  LDA #1
+  STA boss_alive
   
   LDA #2
   STA dun_gen

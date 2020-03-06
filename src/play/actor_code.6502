@@ -1,3 +1,5 @@
+.incsrc "src/play/actor_macros.6502"
+
 ACT_SPRITE_HEAD  .equ 0
 ACT_SPRITE_BODY  .equ 4
 ACT_SPRITE_FIRE  .equ 8
@@ -16,6 +18,280 @@ ACT_SPRITE_DATA_LENGTH .equ 32 ; each sprite is 4 bytes
 ACT_NUM_FRAMES .equ 7
 
 actor_tick:
+  LDX player_room
+  LDA dungeon_map, X
+  AND #%11110000 ; we only care about the enemies
+  CLC
+  LSR
+  LSR
+  LSR
+  LSR
+  STA enemies_in_room
+  
+  LDA player_room
+  CMP boss_room
+  BNE +
+  LDA boss_alive
+  BEQ +
+    LDA enemies_in_room
+    ORA #%00010000
+    STA enemies_in_room
+  +:
+  
+  LDA #0
+  STA actor_data_pointer
+  STA _enemy_loop_counter
+  
+  ; load in controller player choices
+  ; some weird stuff because some buttons are on_down, others are held
+  LDA buttons
+  AND #$0F ; just the d-pad
+  TAX
+  LDA button_ondown
+  AND #$F0 ; the action buttons
+  STA generic_bytes+12
+  TXA
+  ORA generic_bytes+12
+  STA actor_control
+  
+  
+  
+  
+  JMP +skip_enemy_in_room_check ; player is always in the room
+  
+  -:
+    LDA enemies_in_room
+    AND #%00000001
+    CMP #0
+    BEQ +
+      JSR run_ai
+      +skip_enemy_in_room_check:
+      JSR indv_actor_tick
+      JMP ++
+    +:
+    
+      CLC
+      ROR enemies_in_room
+    ++:
+    
+    LDA #ACTOR_DATA_LENGTH
+    CLC
+    ADC actor_data_pointer
+    STA actor_data_pointer
+  LDA _enemy_loop_counter
+  CLC
+  ADC #1
+  STA _enemy_loop_counter
+  CMP NUMBER_OF_ACTORS
+  BNE -
+  
+  
+  RTS
+
+run_ai:
+  LDA #B_BUTTON
+  
+  AND #%11001111 ; AI can't press start or select
+  STA actor_control
+  RTS
+
+indv_actor_tick: ; I'm sorry for my inconsistant naming conventions
+                 ; (not sorry enough to do something about it though)
+  LDX actor_data_pointer
+  
+  swing_sword
+  shoot_fire
+  move_actor
+  move_and_check_fire_hit
+  check_sword_hit
+  test_pause
+  buy_stuff
+  
+  RTS
+
+
+_hit_attacker .equ generic_bytes+3 
+_hit_defender .equ generic_bytes+4
+_hit_is_fire .equ generic_bytes+5
+_hit_damage .equ generic_bytes+6
+_hit_attacker_roll .equ generic_bytes+7
+;_hit_defender_roll .equ generic_bytes+8
+_hit_bitmask .equ generic_bytes+9
+READOUT_TIME .equ #100
+do_actor_hit:
+  ; save arguments because we will make function calls
+  LDA arguments+0
+  STA _hit_attacker
+  LDA arguments+1
+  STA _hit_defender
+  LDA arguments+2
+  STA _hit_is_fire
+  
+  ; init damage dealt to 0
+  LDA #0
+  STA _hit_damage
+  
+  ; determine if the attack is a hit
+  LDA _hit_is_fire
+  BNE +find_damage ; fire attacks cannot be dodged
+  
+  ; roll attacker AGL
+  LDX _hit_attacker
+  LDA actors+ACT_AGL,X ; get attacker agility (ability to land a hit)
+  CLC
+  ADC #1 ; add one for the modulo
+  STA arguments+1 ; this is the divisor
+  JSR rng
+  STA arguments+0 ; the dividend is is random number
+                  ; this gets a random number from 0 to (AGL-1)
+  JSR modulo
+  LDA returns+0
+  STA _hit_attacker_roll
+  
+  ; roll defender DEF
+  LDX _hit_defender
+  LDA actors+ACT_DEF,X ; get attacker agility (ability to land a hit)
+  CLC
+  ADC #1 ; add one for the modulo
+  STA arguments+1 ; this is the divisor
+  JSR rng
+  STA arguments+0 ; the dividend is is random number
+                  ; this gets a random number from 0 to (DEF-1)
+  JSR modulo
+  LDA returns+0
+  ;STA _hit_defender_roll
+  
+  CMP _hit_attacker_roll
+  BCC +
+    ; defender_roll >= attacker_roll, attack missed
+    ; reset damage counter, so "MISS" will display
+    LDX _hit_defender
+    LDA #0
+    STA actors+ACT_READOUT_VALUE,X
+    JMP +disp 
+  +:
+  
+  +find_damage:
+  ; roll attacker STR
+  LDX _hit_attacker
+  LDA actors+ACT_STR,X
+  CLC
+  ADC #1 ; add one for the modulo
+  STA arguments+1 ; this is the divisor
+  JSR rng
+  STA arguments+0 ; the dividend is a random number
+  JSR modulo ; this gives us a random number from 0 to (STR-1)
+  LDA returns+0
+  CLC
+  ADC #1 ; shift the range to (0, STR)
+  STA _hit_damage
+  
+  LDA _hit_is_fire
+  BEQ +
+    ASL _hit_damage ; fire does double damage
+  +:
+  
+  ; apply damage
+  LDX _hit_defender
+  LDA actors+ACT_HP, X
+  SEC
+  SBC _hit_damage
+  STA actors+ACT_HP, X
+  
+  ; if the health has gone to zero or lower, it is dead
+  BCC +kill
+  BEQ +kill
+  
+  
+  +disp:
+  LDA _subrout_enemy_loop_counter
+  BNE +
+    INC readout_update_req ; if the player takes damage, update the stat bar
+  +:
+  
+  LDX _hit_defender
+  LDA READOUT_TIME
+  STA actors+ACT_READOUT_TIMER,X ; set the damage display timer
+  LDA _hit_damage
+  CLC
+  ADC actors+ACT_READOUT_VALUE,X
+  STA actors+ACT_READOUT_VALUE,X ; and value
+  
+  +mark_immune:
+  ; mask = 1 << _subrout_enemy_loop_counter
+  LDA #1
+  LDY _subrout_enemy_loop_counter
+  -:
+  BEQ +
+    ASL
+    DEY
+    JMP -
+  +:
+  STA _hit_bitmask
+  
+  LDX _hit_attacker
+  LDA _hit_is_fire
+  BEQ +
+    LDA actors+ACT_FIRE_DATA,X
+    ORA _hit_bitmask
+    STA actors+ACT_FIRE_DATA,X
+    JMP ++
+  +:
+    LDA actors+ACT_SWORD_DATA,X
+    ORA _hit_bitmask
+    STA actors+ACT_SWORD_DATA,X
+  ++:
+  
+  ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+  RTS ; RETURN
+  ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+  
+  +kill:
+  LDA #0
+  STA actors+ACT_HP, X ; just to be nice in case of display
+  
+  LDA _subrout_enemy_loop_counter
+  BNE +
+    ; player died :(
+    JSR o_god_o_fuk
+    ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+    RTS ; RETURN
+    ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+  +:
+  CMP NUMBER_OF_ACTORS-1
+  BNE +
+    ; boss died!
+    JSR boss_defeated
+    ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+    RTS ; RETURN
+    ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+  +:
+  
+  ; mask = 1 << (_subrout_enemy_loop_counter - 1 + 4)
+  ; -1 because player isn't saved in room data, but is first in loop
+  ; +4 because enemies are saved on the left nibble of the byte
+  LDA #1
+  LDY _subrout_enemy_loop_counter
+  CLC
+  INY
+  INY
+  INY ; +3 = 4-1
+  -:
+  BEQ +
+    ASL
+    DEY
+    JMP -
+  +:
+  
+  EOR #$FF ; invert mask, we need it to &
+  STA _hit_bitmask
+  
+  ; mask out the dead enemy
+  LDX player_room
+  LDA dungeon_map,X
+  AND _hit_bitmask
+  STA dungeon_map,X
+  
   RTS
 
 spawn_actor:
@@ -54,3 +330,100 @@ spawn_actor:
   
 
   .incsrc "src/play/draw_actors.6502"
+  
+boss_defeated:
+
+  LDA #0
+  STA boss_alive
+  
+  LDA #1
+  STA room_update_req
+  
+  RTS
+  
+level_up:
+  INC player_floor
+    
+  JSR gen_dungeon
+  
+  LDA #1
+  STA room_update_req
+
+
+  
+  LDX #ACTOR_DATA_LENGTH
+  LDA #1
+  STA _subrout_enemy_loop_counter
+  -:
+    JSR upgrade_enemy
+  
+    LDA _subrout_actor_data_pointer
+    CLC
+    ADC #ACTOR_DATA_LENGTH
+    TAX
+    
+    CLC
+    INC _subrout_enemy_loop_counter
+    LDA _subrout_enemy_loop_counter
+    CMP NUMBER_OF_ACTORS
+    BNE -
+  +:
+  
+
+
+  RTS
+
+MACRO increase_stat _stat
+  JSR rng
+  LDA rng_seed+0
+  AND #$0F
+  STA generic_bytes+128
+  
+  JSR rng
+  LDA rng_seed+0
+  AND #$0F
+  
+  CMP generic_bytes+128
+  BCC +
+    STA generic_bytes+128
+  +:
+  
+  LDA _stat
+  CMP ACT_MANAMAX
+  BNE +
+    LDA generic_bytes+128
+    AND #$02
+    STA generic_bytes+128
+  +:
+  
+  
+  LDX _subrout_actor_data_pointer
+  LDA actors+_stat,X
+  BNE +
+    LDA player_floor
+    CMP #3
+    BCS +
+      LDA #0
+      STA  generic_bytes+128
+  +:
+  
+  
+  LDA generic_bytes+128
+  CLC
+  ADC actors+_stat,X
+  STA actors+_stat,X
+ENDM
+upgrade_enemy:
+  STX _subrout_actor_data_pointer
+  
+  increase_stat ACT_HPMAX
+  increase_stat ACT_MANAMAX
+  increase_stat ACT_STR
+  increase_stat ACT_AGL
+  increase_stat ACT_DEF
+  
+  
+  RTS
+
+o_god_o_fuk:
+  RTS

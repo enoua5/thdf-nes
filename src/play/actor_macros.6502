@@ -1,0 +1,1055 @@
+CHEST_LOCATION_X .equ #48
+CHEST_LOCATION_Y .equ #140
+ROOM_DATA_CHEST_BIT .equ #%00000010
+MACRO check_onChest
+  LDX player_room
+  LDA dungeon_map, X
+  AND ROOM_DATA_CHEST_BIT
+  BEQ +not_on_chest
+
+  LDA actors+ACT_X
+  CMP CHEST_LOCATION_X
+  BCS +not_on_chest
+  
+  LDA actors+ACT_Y
+  CMP CHEST_LOCATION_Y
+  BCC +not_on_chest
+  
+  LDA #1
+  JMP +on_chest
+  
+  +not_on_chest:
+  LDA #0
+  +on_chest:
+ENDM
+
+FOUNTAIN_RIGHT_LOCATION_X .equ #148
+FOUNTAIN_TOP_LOCATION_Y .equ #80
+FOUNTAIN_LEFT_LOCATION_X .equ #116
+FOUNTAIN_BOTTOM_LOCATION_Y .equ #108
+ROOM_DATA_FOUNTAIN_BIT .equ #%00001000
+MACRO check_onFountain
+  LDX player_room
+  LDA dungeon_map, X
+  AND ROOM_DATA_FOUNTAIN_BIT
+  BEQ +not_on_fountain
+
+  LDA actors+ACT_X
+  CMP FOUNTAIN_RIGHT_LOCATION_X
+  BCS +not_on_fountain
+  
+  LDA actors+ACT_Y
+  CMP FOUNTAIN_TOP_LOCATION_Y
+  BCC +not_on_fountain
+
+  LDA actors+ACT_X
+  CMP FOUNTAIN_LEFT_LOCATION_X
+  BCC +not_on_fountain
+  
+  LDA actors+ACT_Y
+  CMP FOUNTAIN_BOTTOM_LOCATION_Y
+  BCS +not_on_fountain
+  
+  LDA #1
+  JMP +on_fountain
+  
+  +not_on_fountain:
+  LDA #0
+  +on_fountain:
+ENDM
+
+MACRO check_onStairs
+  LDA player_room
+  CMP boss_room
+  BNE +not_on_stairs
+  
+  LDA boss_alive
+  BNE +not_on_stairs
+
+  LDA actors+ACT_X
+  CMP FOUNTAIN_RIGHT_LOCATION_X
+  BCS +not_on_stairs
+  
+  LDA actors+ACT_Y
+  CMP FOUNTAIN_TOP_LOCATION_Y
+  BCC +not_on_stairs
+
+  LDA actors+ACT_X
+  CMP FOUNTAIN_LEFT_LOCATION_X
+  BCC +not_on_stairs
+  
+  LDA actors+ACT_Y
+  CMP FOUNTAIN_BOTTOM_LOCATION_Y
+  BCS +not_on_stairs
+  
+  LDA #1
+  JMP +on_stairs
+  
+  +not_on_stairs:
+  LDA #0
+  +on_stairs:
+ENDM
+
+GHOST_LOCATION_Y .equ #48
+GHOST_LOCATION_X .equ #208
+ROOM_DATA_GHOST_BIT .equ #%00000100
+MACRO check_onGhost
+  LDX player_room
+  LDA dungeon_map, X
+  AND ROOM_DATA_GHOST_BIT
+  BEQ +not_on_ghost
+
+  LDA actors+ACT_X
+  CMP GHOST_LOCATION_X
+  BCC +not_on_ghost
+  
+  LDA actors+ACT_Y
+  CMP GHOST_LOCATION_Y
+  BCS +not_on_ghost
+  
+  LDA #1
+  JMP +on_ghost
+  
+  +not_on_ghost:
+  LDA #0
+  +on_ghost:
+
+ENDM
+
+MACRO move_actor
+  LDA actor_control
+  AND #$0F ; ignore everything but d-pad
+  BNE +maybe_movement
+    JMP +no_movement
+    
+  +maybe_movement:
+  LDA actors+ACT_ATTKTIME,X
+  BEQ +yes_movement ; if not attacking, can move
+    JMP +no_movement
+  
+  +yes_movement:
+    LDA actor_control
+    AND RIGHT_BUTTON
+    BEQ ++
+      LDA #2
+      STA actors+ACT_FACE,X
+      
+      move_actor_right_if_possible
+    ++:
+    
+    LDA actor_control
+    AND LEFT_BUTTON
+    BEQ ++
+      LDA #3
+      STA actors+ACT_FACE,X
+      
+      move_actor_left_if_possible
+    ++:
+    
+    LDA actor_control
+    AND UP_BUTTON
+    BEQ ++
+      LDA #1
+      STA actors+ACT_FACE,X
+      
+      move_actor_up_if_possible
+    ++:
+    
+    LDA actor_control
+    AND DOWN_BUTTON
+    BEQ ++
+      LDA #0
+      STA actors+ACT_FACE,X
+      
+      move_actor_down_if_possible
+    ++:
+  
+      
+    CLC
+    INC actors+ACT_ANIM_TIMER,X
+
+  +no_movement:
+ENDM
+
+MACRO buy_stuff
+  LDA actor_control
+  AND SELECT_BUTTON
+  BNE +
+    JMP +no_purchase
+  +:
+  
+  LDA standing_on_stairs
+  BEQ +
+    JSR level_up
+    JMP +done_buying
+  +:
+  
+  LDA current_offer_type
+  AND #%01000000
+  BNE +
+    JMP +no_purchase
+  +:
+    LDA current_offer_type
+    AND #%10000000 ; is it a chest?
+    BEQ +not_a_chest
+      LDA current_offer_amounts
+      CLC
+      ADC #1
+      CLC
+      ADC player_money
+      BCC +value_not_full
+        LDA #255
+      +value_not_full:
+      
+      STA player_money
+      
+      LDX player_room
+      LDA ROOM_DATA_CHEST_BIT ; remove chest from room
+      EOR #$FF
+      AND dungeon_map,X
+      STA dungeon_map,X
+      
+      JSR draw_chest
+      
+      JMP +done_buying
+    +not_a_chest:
+    
+    ; make sure player has enough money
+    LDA current_offer_type
+    AND #%00000001
+    BNE +costs_gems
+      ; costs coins
+      LDA current_offer_amounts
+      AND #$F0 ; just the cost
+      LSR
+      LSR
+      LSR
+      LSR
+      ; leave off the +1 for now so we can use BCC
+      ;CLC
+      ;ADC #1 ; get actual cost
+      
+      CMP player_money
+      BCC + ; can't afford
+        JMP +done_buying
+      +:
+      
+      ; take away money
+      
+      CLC 
+      ADC #1
+      STA generic_bytes+88 ; save cost because we need to load current money
+      LDA player_money
+      SEC
+      SBC generic_bytes+88
+      STA player_money
+      
+      JMP +can_afford
+      
+    +costs_gems:
+      LDA current_offer_amounts
+      AND #$F0 ; just the cost
+      LSR
+      LSR
+      LSR
+      LSR
+      ; leave off the +1 for now so we can use BCC
+      ;CLC
+      ;ADC #1 ; get actual cost
+      
+      CMP player_jewels
+      BCC + ; can't afford
+        JMP +done_buying
+      +:
+      ; take away money
+      CLC 
+      ADC #1
+      STA generic_bytes+88 ; save cost because we need to load current money
+      LDA player_jewels
+      SEC
+      SBC generic_bytes+88
+      STA player_jewels
+      
+      JMP +can_afford
+    
+    +can_afford:
+      
+      ; give the thing
+      LDA current_offer_amounts
+      AND #$0F
+      CLC
+      ADC #1
+      STA generic_bytes+69
+      
+      LDA current_offer_type
+      AND #$0F
+      LSR
+      
+      CMP #0
+      BNE +next_item
+        LDA player_jewels
+        CLC
+        ADC generic_bytes+69
+        BCC +not_too_much
+          LDA #255
+        +not_too_much:
+        
+        STA player_jewels
+        JMP +done_buying
+      +next_item:
+      
+      CMP #1
+      BNE +next_item
+        LDA actors+ACT_HP
+        CLC
+        ADC generic_bytes+69
+        CMP actors+ACT_HPMAX
+        BCC +not_too_much
+          LDA actors+ACT_HPMAX
+        +not_too_much:
+        
+        STA actors+ACT_HP
+        JMP +done_buying
+      +next_item:
+      
+      CMP #2
+      BNE +next_item
+        LDA actors+ACT_MANA
+        CLC
+        ADC generic_bytes+69
+        CMP actors+ACT_MANAMAX
+        BCC +not_too_much
+          LDA actors+ACT_MANAMAX
+        +not_too_much:
+        
+        STA actors+ACT_MANA
+        JMP +done_buying
+      +next_item:
+      
+      CMP #3
+      BNE +next_item
+        LDA actors+ACT_AGL
+        CLC
+        ADC generic_bytes+69
+        BCC +not_too_much
+          LDA #255
+        +not_too_much:
+        
+        STA actors+ACT_AGL
+        JMP +done_buying
+      +next_item:
+      
+      CMP #4
+      BNE +next_item
+        LDA actors+ACT_DEF
+        CLC
+        ADC generic_bytes+69
+        BCC +not_too_much
+          LDA #255
+        +not_too_much:
+        
+        STA actors+ACT_DEF
+        JMP +done_buying
+      +next_item:
+      
+      CMP #5
+      BNE +next_item
+        LDA actors+ACT_STR
+        CLC
+        ADC generic_bytes+69
+        CMP #127
+        BCC +not_too_much
+          LDA #127
+        +not_too_much:
+        
+        STA actors+ACT_STR
+        JMP +done_buying
+      +next_item:
+      
+      CMP #6
+      BNE +next_item
+        LDA actors+ACT_MANAMAX
+        CLC
+        ADC generic_bytes+69
+        BCC +not_too_much
+          LDA #255
+        +not_too_much:
+        
+        STA actors+ACT_MANAMAX
+        JMP +done_buying
+      +next_item:
+      
+      CMP #7
+      BNE +next_item
+        LDA actors+ACT_HPMAX
+        CLC
+        ADC generic_bytes+69
+        BCC +not_too_much
+          LDA #255
+        +not_too_much:
+        
+        STA actors+ACT_HPMAX
+        JMP +done_buying
+      +next_item:
+      
+  +done_buying:
+  LDA #1
+  STA readout_update_req
+  +no_purchase:
+  
+  LDX actor_data_pointer
+ENDM
+
+TOP_WALL_HEIGHT .equ #32
+LEFT_WALL_WIDTH .equ #37
+RIGHT_WALL_WIDTH .equ #220
+BOTTOM_WALL_HEIGHT .equ #155
+TOP_DOOR_LEFT .equ #117
+TOP_DOOR_RIGHT .equ #140
+SIDE_DOOR_TOP .equ #80
+SIDE_DOOR_BOTTOM .equ #107
+
+MACRO move_actor_up_if_possible
+  ; TEST 1. COLLIDE WITH TOP WALL, MOVE THROUGH DOOR
+    LDA actors+ACT_Y,X
+    CMP TOP_WALL_HEIGHT
+    BCS + ; if actor is below wall; try different test
+    
+    CPX #0
+    BNE +do_not_move ; only the player can move through doors
+    
+    LDA can_move_up_room
+    BEQ +do_not_move ; if the door is closed, you can't pass it
+    
+    LDA actors+ACT_X,X
+    CMP TOP_DOOR_LEFT-1
+    BCC +do_not_move
+    CMP TOP_DOOR_RIGHT+1
+    BCS +do_not_move ;have to be in door to go through it
+    
+    JMP +do_move ; test passed, move up
+  
+  +:
+  ; TEST 2. TOP OF LEFT DOOR
+    LDA actors+ACT_X,X
+    CMP LEFT_WALL_WIDTH-1
+    BCS + ; actor is right of left wall; try different test
+  
+    LDA actors+ACT_Y,X
+    CMP SIDE_DOOR_TOP
+    BCS +do_move ; below top of door
+    
+    JMP +do_not_move ; test failed
+    
+  +:
+  ; TEST 3. TOP OF RIGHT DOOR
+    LDA actors+ACT_X,X
+    CMP RIGHT_WALL_WIDTH+1
+    BCC +do_move ; actor is not within any wall areas
+    
+    LDA actors+ACT_Y,X
+    CMP SIDE_DOOR_TOP
+    BCS +do_move
+    
+    JMP +do_not_move
+    
+  +do_move:
+    DEC actors+ACT_Y,X
+  +do_not_move:
+ENDM
+
+MACRO move_actor_down_if_possible
+  ; TEST 1. COLLIDE WITH BOTTOM WALL, MOVE THROUGH DOOR
+    LDA actors+ACT_Y,X
+    CMP BOTTOM_WALL_HEIGHT
+    BCC + ; if actor is above wall; try different test
+    
+    CPX #0
+    BNE +do_not_move ; only the player can move through doors
+    
+    LDA can_move_down_room
+    BEQ +do_not_move ; if the door is closed, you can't pass it
+    
+    LDA actors+ACT_X,X
+    CMP TOP_DOOR_LEFT-1 ; top because I suck at naming things
+    BCC +do_not_move
+    CMP TOP_DOOR_RIGHT+1
+    BCS +do_not_move ;have to be in door to go through it
+    
+    JMP +do_move ; test passed, move up
+  
+  +:
+  ; TEST 2. BOTTOM OF LEFT DOOR
+    LDA actors+ACT_X,X
+    CMP LEFT_WALL_WIDTH-1
+    BCS + ; actor is right of left wall; try different test
+  
+    LDA actors+ACT_Y,X
+    CMP SIDE_DOOR_BOTTOM
+    BCC +do_move ; above bottom of door
+    
+    JMP +do_not_move ; test failed
+    
+  +:
+  ; TEST 3. BOTTOM OF RIGHT DOOR
+    LDA actors+ACT_X,X
+    CMP RIGHT_WALL_WIDTH+1
+    BCC +do_move ; actor is not within any wall areas
+    
+    LDA actors+ACT_Y,X
+    CMP SIDE_DOOR_BOTTOM
+    BCC +do_move
+    
+    JMP +do_not_move
+    
+  +do_move:
+    INC actors+ACT_Y,X
+  +do_not_move:
+ENDM
+
+MACRO move_actor_left_if_possible
+  ; TEST 1. COLLIDE WITH LEFT WALL, MOVE THROUGH DOOR
+    LDA actors+ACT_X,X
+    CMP LEFT_WALL_WIDTH
+    BCS + ; if actor is right of wall; try different test
+    
+    CPX #0
+    BNE +do_not_move ; only the player can move through doors
+    
+    LDA can_move_left_room
+    BEQ +do_not_move ; if the door is closed, you can't pass it
+    
+    LDA actors+ACT_Y,X
+    CMP SIDE_DOOR_TOP-1
+    BCC +do_not_move
+    CMP SIDE_DOOR_BOTTOM+1
+    BCS +do_not_move ;have to be in door to go through it
+    
+    JMP +do_move ; test passed, move up
+  
+  +:
+  ; TEST 2. LEFT OF TOP DOOR
+    LDA actors+ACT_Y,X
+    CMP TOP_WALL_HEIGHT-1
+    BCS + ; actor is bellow top wall; try different test
+  
+    LDA actors+ACT_X,X
+    CMP TOP_DOOR_LEFT
+    BCS +do_move ; right of left of door
+    
+    JMP +do_not_move ; test failed
+    
+  +:
+  ; TEST 3. LEFT OF BOTTOM DOOR
+    LDA actors+ACT_Y,X
+    CMP BOTTOM_WALL_HEIGHT+1
+    BCC +do_move ; actor is not within any wall areas
+    
+    LDA actors+ACT_X,X
+    CMP TOP_DOOR_LEFT
+    BCS +do_move
+    
+    JMP +do_not_move
+    
+  +do_move:
+    DEC actors+ACT_X,X
+  +do_not_move:
+ENDM
+
+MACRO move_actor_right_if_possible
+  ; TEST 1. COLLIDE WITH RIGHT WALL, MOVE THROUGH DOOR
+    LDA actors+ACT_X,X
+    CMP RIGHT_WALL_WIDTH
+    BCC + ; if actor is left of wall; try different test
+    
+    CPX #0
+    BNE +do_not_move ; only the player can move through doors
+    
+    LDA can_move_right_room
+    BEQ +do_not_move ; if the door is closed, you can't pass it
+    
+    LDA actors+ACT_Y,X
+    CMP SIDE_DOOR_TOP-1
+    BCC +do_not_move
+    CMP SIDE_DOOR_BOTTOM+1
+    BCS +do_not_move ;have to be in door to go through it
+    
+    JMP +do_move ; test passed, move up
+  
+  +:
+  ; TEST 2. RIGHT OF TOP DOOR
+    LDA actors+ACT_Y,X
+    CMP TOP_WALL_HEIGHT-1
+    BCS + ; actor is bellow top wall; try different test
+  
+    LDA actors+ACT_X,X
+    CMP TOP_DOOR_RIGHT
+    BCC +do_move ; left of right of door
+    
+    JMP +do_not_move ; test failed
+    
+  +:
+  ; TEST 3. RIGHT OF BOTTOM DOOR
+    LDA actors+ACT_Y,X
+    CMP BOTTOM_WALL_HEIGHT+1
+    BCC +do_move ; actor is not within any wall areas
+    
+    LDA actors+ACT_X,X
+    CMP TOP_DOOR_RIGHT
+    BCC +do_move
+    
+    JMP +do_not_move
+    
+  +do_move:
+    INC actors+ACT_X,X
+  +do_not_move:
+ENDM
+
+MACRO test_pause
+  LDA actor_control
+  AND START_BUTTON
+  BEQ +
+    ; pause the game
+    LDA #1
+    STA paused
+    
+    ; clear the start button so it doesn't instantly unpause
+    LDA START_BUTTON
+    EOR #$FF
+    AND button_ondown
+    STA button_ondown
+  +:
+ENDM
+
+TOTAL_ATTACK_TIME .equ #$40
+MACRO swing_sword
+  LDA actors+ACT_ATTKTIME,X
+  BNE +already_attacking
+  
+  LDA actor_control
+  AND A_BUTTON
+  BEQ +attack_over ; no sword attack made
+  
+    LDA TOTAL_ATTACK_TIME
+    STA actors+ACT_ATTKTIME,X
+    
+    ; mark attacker as "hit", making it impossible to hit self
+    LDA #1
+    LDY _enemy_loop_counter
+    -:
+      CPY #0
+      BEQ +
+    
+      ASL A ; shift the bit left once based which actor we're processing
+      
+      DEY
+    JMP -
+    +:
+    
+    ORA #%10000000 ; mark attack as active
+    STA actors+ACT_SWORD_DATA,X
+    
+    
+  +already_attacking:
+  ;decrement attack time
+  DEC actors+ACT_ATTKTIME,X
+  BNE +end_of_swing_sword_macro
+  attack_over:
+  
+    ;attack is over
+    LDA #0
+    STA actors+ACT_SWORD_DATA,X
+  
+  +end_of_swing_sword_macro:
+ENDM
+
+MACRO shoot_fire
+  LDA actors+ACT_ATTKTIME,X
+  BEQ +
+    JMP +already_attacking
+  +:
+  
+  LDA actor_control
+  AND B_BUTTON
+  BNE +
+    JMP +end_of_shoot_fire_macro ; no fire attack made
+  +:
+  
+  LDA actors+ACT_MANA,X
+  BNE +
+    JMP +end_of_shoot_fire_macro ; not enough mana to shoot fire
+  +:
+  
+  LDA actors+ACT_FIRE_DATA,X
+  BEQ +
+    JMP +end_of_shoot_fire_macro ; last fireball is still on screen
+  +:
+  
+    ; -1 fireball
+    DEC actors+ACT_MANA,X
+    ; update stats
+    INC readout_update_req
+  
+    LDA TOTAL_ATTACK_TIME
+    STA actors+ACT_ATTKTIME,X
+    
+    ; mark attacker as "hit", making it impossible to hit self
+    LDA #1
+    LDY _enemy_loop_counter
+    -:
+      CPY #0
+      BEQ +
+    
+      ASL A ; shift the bit left once based which actor we're processing
+      
+      DEY
+    JMP -
+    +:
+    
+    ORA #%10000000 ; mark attack as active
+    STA actors+ACT_FIRE_DATA,X
+    
+    ; spawn fireball
+    LDA actors+ACT_X,X
+    STA actors+ACT_FIRE_X,X
+    LDA actors+ACT_Y,X
+    STA actors+ACT_FIRE_Y,X
+    LDA actors+ACT_FACE,X
+    STA actors+ACT_FIRE_FACE,X
+    ; move fireball to a sensable "hand" spot
+    TAY
+    BNE + ; facing down
+      LDA actors+ACT_FIRE_X,X
+      SEC
+      SBC #4
+      STA actors+ACT_FIRE_X,X
+      
+      LDA actors+ACT_FIRE_Y,X
+      CLC
+      ADC #4
+      STA actors+ACT_FIRE_Y,X
+      
+      
+      LDA #1
+      STA actors+ACT_FIRE_YVEL,X
+      
+      LDA actor_control
+      AND RIGHT_BUTTON
+      BEQ +n
+        LDA #1
+        STA actors+ACT_FIRE_XVEL,X
+        JMP ++
+      +n:
+      LDA actor_control
+      AND LEFT_BUTTON
+      BEQ +n
+        LDA #-1
+        STA actors+ACT_FIRE_XVEL,X
+        JMP ++
+      +n:
+        CLC
+        INC actors+ACT_FIRE_YVEL,X
+        LDA #0
+        STA actors+ACT_FIRE_XVEL,X
+      
+      JMP ++
+    +:
+    DEY
+    BNE + ; facing up
+      LDA actors+ACT_FIRE_X,X
+      SEC
+      SBC #4
+      STA actors+ACT_FIRE_X,X
+      
+      LDA actors+ACT_FIRE_Y,X
+      SEC
+      SBC #12
+      STA actors+ACT_FIRE_Y,X
+      
+      
+      LDA #-1
+      STA actors+ACT_FIRE_YVEL,X
+      
+      LDA actor_control
+      AND RIGHT_BUTTON
+      BEQ +n
+        LDA #1
+        STA actors+ACT_FIRE_XVEL,X
+        JMP ++
+      +n:
+      LDA actor_control
+      AND LEFT_BUTTON
+      BEQ +n
+        LDA #-1
+        STA actors+ACT_FIRE_XVEL,X
+        JMP ++
+      +n:
+        SEC
+        DEC actors+ACT_FIRE_YVEL,X
+        LDA #0
+        STA actors+ACT_FIRE_XVEL,X
+      
+      JMP ++
+    +:
+    DEY
+    BNE + ; facing right
+      LDA actors+ACT_FIRE_X,X
+      CLC
+      ADC #4
+      STA actors+ACT_FIRE_X,X
+      
+      LDA actors+ACT_FIRE_Y,X
+      SEC
+      SBC #8
+      STA actors+ACT_FIRE_Y,X
+      
+      
+      LDA #1
+      STA actors+ACT_FIRE_XVEL,X
+      
+      LDA actor_control
+      AND DOWN_BUTTON
+      BEQ +n
+        LDA #1
+        STA actors+ACT_FIRE_YVEL,X
+        JMP ++
+      +n:
+      LDA actor_control
+      AND UP_BUTTON
+      BEQ +n
+        LDA #-1
+        STA actors+ACT_FIRE_YVEL,X
+        JMP ++
+      +n:
+        CLC
+        INC actors+ACT_FIRE_XVEL,X
+        LDA #0
+        STA actors+ACT_FIRE_YVEL,X
+      
+      JMP ++
+    +:
+    DEY
+    BNE + ; facing left
+      LDA actors+ACT_FIRE_X,X
+      SEC
+      SBC #12
+      STA actors+ACT_FIRE_X,X
+      
+      LDA actors+ACT_FIRE_Y,X
+      SEC
+      SBC #8
+      STA actors+ACT_FIRE_Y,X
+      
+      
+      LDA #-1
+      STA actors+ACT_FIRE_XVEL,X
+      
+      LDA actor_control
+      AND DOWN_BUTTON
+      BEQ +n
+        LDA #1
+        STA actors+ACT_FIRE_YVEL,X
+        JMP ++
+      +n:
+      LDA actor_control
+      AND UP_BUTTON
+      BEQ +n
+        LDA #-1
+        STA actors+ACT_FIRE_YVEL,X
+        JMP ++
+      +n:
+        SEC
+        DEC actors+ACT_FIRE_XVEL,X
+        LDA #0
+        STA actors+ACT_FIRE_YVEL,X
+      
+    +:
+    ++:
+    
+  +already_attacking:
+  ;decrement attack time
+  DEC actors+ACT_ATTKTIME,X
+  +end_of_shoot_fire_macro:
+ENDM
+
+MACRO check_sword_hit
+  LDA actors+ACT_SWORD_DATA,X
+  AND #%10000000 ; Attack is active bit
+  BNE +
+    JMP +end_sword
+  +:
+    
+    check_hit ACT_SWORD_DATA, ACT_SPRITE_BLADE, 0
+  
+  +end_sword:
+  LDX actor_data_pointer
+ENDM
+
+_subrout_enemies_in_room .equ generic_bytes+65
+_subrout_enemy_loop_counter .equ generic_bytes+64
+_subrout_actor_data_pointer .equ generic_bytes+66
+_hit_ignores .equ generic_bytes+67
+MACRO move_and_check_fire_hit
+  LDA actors+ACT_FIRE_DATA,X
+  AND #%10000000 ; Attack is active bit
+  BNE +
+    JMP +end_fire
+  +:
+    ; update position
+    LDA actors+ACT_FIRE_X,X
+    CLC
+    ADC actors+ACT_FIRE_XVEL,X
+    STA actors+ACT_FIRE_X,X
+    LDA actors+ACT_FIRE_Y,X
+    CLC
+    ADC actors+ACT_FIRE_YVEL,X
+    STA actors+ACT_FIRE_Y,X
+    ; delete when off screen
+    LDA actors+ACT_FIRE_Y,X
+    CMP #8
+    BCC +delete_fire
+    CMP #174
+    BCS +delete_fire
+    LDA actors+ACT_FIRE_X,X
+    CMP #8
+    BCC +delete_fire
+    CMP #248
+    BCS +delete_fire
+    
+    JMP +do_not_delete_fire
+    +delete_fire:
+      LDA #0
+      STA actors+ACT_FIRE_YVEL,X
+      STA actors+ACT_FIRE_XVEL,X
+      STA actors+ACT_FIRE_X,X
+      STA actors+ACT_FIRE_DATA,X
+      LDA #$FF
+      STA actors+ACT_FIRE_Y,X
+    JMP +end_fire
+    +do_not_delete_fire:
+    
+    check_hit ACT_FIRE_DATA, ACT_SPRITE_FIRE, 1
+  
+  +end_fire:
+  LDX actor_data_pointer
+ENDM
+
+MACRO check_hit __DATA_OFFSET, __HIT_SPRITE, __IS_FIRE
+  LDA actors+__DATA_OFFSET,X
+  STA _hit_ignores
+  
+  LDX player_room
+  LDA dungeon_map, X
+  AND #%11110000 ; we only care about the enemies
+  CLC
+  LSR
+  LSR
+  LSR
+  LSR
+  STA _subrout_enemies_in_room
+  
+  LDA player_room
+  CMP boss_room
+  BNE +
+  LDA boss_alive
+  BEQ +
+    LDA _subrout_enemies_in_room
+    ORA #%00010000
+    STA _subrout_enemies_in_room
+  +:
+  
+  CLC
+  ASL _subrout_enemies_in_room
+  LDA _subrout_enemies_in_room
+  ORA #%00000001
+  STA _subrout_enemies_in_room
+  
+  LDA #0
+  STA _subrout_actor_data_pointer
+  STA _subrout_enemy_loop_counter
+  
+  
+  -:
+    LDA _subrout_enemies_in_room
+    AND #%00000001
+    BEQ +
+      ; check if already hit
+      LDA _hit_ignores
+      AND #%00000001
+      BNE +end_checkhit
+
+      ;;;;;;;;;;;;;;;;
+      LDA _enemy_loop_counter
+      CLC
+      ASL
+      ASL
+      ASL
+      ASL
+      ASL ; we now have location of attacker sprite
+      CLC
+      ADC #__HIT_SPRITE
+      STA arguments+0
+      
+      LDA _subrout_enemy_loop_counter
+      ;STA generic_bytes+$4b
+      CLC
+      ASL
+      ASL
+      ASL
+      ASL
+      ASL ; we now have location of targer sprite
+      CLC
+      ADC #ACT_SPRITE_HEAD
+      STA arguments+1
+      
+      JSR check_sprite_overlap
+      LDX actor_data_pointer
+      LDA returns+0
+      BNE +enemy_hit
+      
+      LDA _subrout_enemy_loop_counter
+      CLC
+      ASL
+      ASL
+      ASL
+      ASL
+      ASL ; we now have location of targer sprite
+      CLC
+      ADC #ACT_SPRITE_BODY
+      STA arguments+1
+      
+      JSR check_sprite_overlap
+      LDX actor_data_pointer
+      LDA returns+0
+      BNE +enemy_hit
+      
+      JMP +end_checkhit
+      +enemy_hit:
+      LDA actor_data_pointer
+      STA arguments+0
+      LDA _subrout_actor_data_pointer
+      STA arguments+1
+      LDA #__IS_FIRE ; says if it's a fire hit (this comment was more needed before I reorganized stuff, but oh well)
+      STA arguments+2
+      JMP do_actor_hit
+      +end_checkhit:
+      ;JMP ++
+    +:
+      CLC
+      ROR _subrout_enemies_in_room
+      CLC
+      ROR _hit_ignores
+    ;++:
+    
+    LDA #ACTOR_DATA_LENGTH
+    CLC
+    ADC _subrout_actor_data_pointer
+    STA _subrout_actor_data_pointer
+  LDA _subrout_enemy_loop_counter
+  CLC
+  ADC #1
+  STA _subrout_enemy_loop_counter
+  CMP NUMBER_OF_ACTORS
+  BNE -
+
+ENDM
