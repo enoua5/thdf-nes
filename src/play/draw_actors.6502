@@ -96,6 +96,7 @@ hide_actor_sprites:
 draw_spec_actor:
   JSR draw_body
   JSR draw_fireball
+  JSR draw_sword
   JSR check_if_draw_readout
   
   RTS
@@ -553,4 +554,213 @@ set_readout_x:
   end_readout_x:
   
   
+  RTS
+  
+_first_frame_of_attack .equ generic_bytes+240
+_actor_x .equ generic_bytes+241
+_actor_y . equ generic_bytes+242
+draw_sword:
+  LDX actor_data_pointer
+  LDA actors+ACT_SWORD_DATA,X
+  AND #%10000000
+  BNE +
+    JMP +no_sword
+  +:
+  
+  LDA actors+ACT_ATTKTIME,X
+  CMP TOTAL_ATTACK_TIME-2 ; don't ask me why it's -2, it just is
+  BEQ +
+    LDA #0
+    JMP ++
+  +:
+    LDA #1
+  ++:
+  STA _first_frame_of_attack
+  
+  LDA actors+ACT_X,X
+  SEC
+  SBC #4
+  STA _actor_x
+  LDA actors+ACT_Y,X
+  SEC
+  SBC #4
+  STA _actor_y
+  
+  LDA actors+ACT_FACE,X
+  BNE +
+    ; 0 - down
+    LDX actor_sprite_pointer
+    
+    LDA #$3F
+    STA $0200+ACT_SPRITE_BLADE+SPRITE_DATA_I,X
+    LDA $0200+ACT_SPRITE_BLADE+SPRITE_DATA_A,X
+    AND #%00111111
+    ORA #%10000000
+    STA $0200+ACT_SPRITE_BLADE+SPRITE_DATA_A,X
+    LDA _actor_x
+    STA $0200+ACT_SPRITE_BLADE+SPRITE_DATA_X,X
+    LDA _actor_y
+    CLC
+    ADC #8
+    STA $0200+ACT_SPRITE_BLADE+SPRITE_DATA_Y,X
+    
+    LDA _first_frame_of_attack
+    BNE +end
+      
+      LDA #$3E
+      STA $0200+ACT_SPRITE_HILT+SPRITE_DATA_I,X
+      LDA $0200+ACT_SPRITE_HILT+SPRITE_DATA_A,X
+      AND #%00111111
+      ORA #%10000000
+      STA $0200+ACT_SPRITE_HILT+SPRITE_DATA_A,X
+      ; set hilt to where blade is
+      LDA $0200+ACT_SPRITE_BLADE+SPRITE_DATA_X,X
+      STA $0200+ACT_SPRITE_HILT+SPRITE_DATA_X,X
+      LDA $0200+ACT_SPRITE_BLADE+SPRITE_DATA_Y,X
+      STA $0200+ACT_SPRITE_HILT+SPRITE_DATA_Y,X
+      ; and move blade forward
+      LDA $0200+ACT_SPRITE_BLADE+SPRITE_DATA_Y,X
+      CLC
+      ADC #8
+      STA $0200+ACT_SPRITE_BLADE+SPRITE_DATA_Y,X
+      
+    +end:
+    JMP ++
+  +:
+  SEC
+  SBC #1
+  BNE +
+    ; 1 - up
+    LDX actor_sprite_pointer
+    
+    LDA #$3F
+    STA $0200+ACT_SPRITE_BLADE+SPRITE_DATA_I,X
+    LDA $0200+ACT_SPRITE_BLADE+SPRITE_DATA_A,X
+    AND #%00111111
+    STA $0200+ACT_SPRITE_BLADE+SPRITE_DATA_A,X
+    LDA _actor_x
+    STA $0200+ACT_SPRITE_BLADE+SPRITE_DATA_X,X
+    LDA _actor_y
+    SEC
+    SBC #8
+    STA $0200+ACT_SPRITE_BLADE+SPRITE_DATA_Y,X
+    
+    LDA _first_frame_of_attack
+    BNE +end
+      
+      LDA #$3E
+      STA $0200+ACT_SPRITE_HILT+SPRITE_DATA_I,X
+      LDA $0200+ACT_SPRITE_HILT+SPRITE_DATA_A,X
+      AND #%00111111
+      STA $0200+ACT_SPRITE_HILT+SPRITE_DATA_A,X
+      ; set hilt to where blade is
+      LDA $0200+ACT_SPRITE_BLADE+SPRITE_DATA_X,X
+      STA $0200+ACT_SPRITE_HILT+SPRITE_DATA_X,X
+      LDA $0200+ACT_SPRITE_BLADE+SPRITE_DATA_Y,X
+      STA $0200+ACT_SPRITE_HILT+SPRITE_DATA_Y,X
+      ; and move blade forward
+      LDA $0200+ACT_SPRITE_BLADE+SPRITE_DATA_Y,X
+      SEC
+      SBC #8
+      STA $0200+ACT_SPRITE_BLADE+SPRITE_DATA_Y,X
+      
+    +end:
+    JMP ++
+  +:
+  SEC
+  SBC #1
+  BNE +
+    ; 2 - right
+    LDX actor_sprite_pointer
+    
+    LDA #$2F
+    STA $0200+ACT_SPRITE_BLADE+SPRITE_DATA_I,X
+    LDA $0200+ACT_SPRITE_BLADE+SPRITE_DATA_A,X
+    AND #%00111111
+    STA $0200+ACT_SPRITE_BLADE+SPRITE_DATA_A,X
+    LDA _actor_x
+    CLC
+    ADC #8
+    STA $0200+ACT_SPRITE_BLADE+SPRITE_DATA_X,X
+    LDA _actor_y
+    SEC
+    SBC #2
+    STA $0200+ACT_SPRITE_BLADE+SPRITE_DATA_Y,X
+    
+    LDA _first_frame_of_attack
+    BNE +end
+      
+      LDA #$2E
+      STA $0200+ACT_SPRITE_HILT+SPRITE_DATA_I,X
+      LDA $0200+ACT_SPRITE_HILT+SPRITE_DATA_A,X
+      AND #%00111111
+      STA $0200+ACT_SPRITE_HILT+SPRITE_DATA_A,X
+      ; set hilt to where blade is
+      LDA $0200+ACT_SPRITE_BLADE+SPRITE_DATA_X,X
+      STA $0200+ACT_SPRITE_HILT+SPRITE_DATA_X,X
+      LDA $0200+ACT_SPRITE_BLADE+SPRITE_DATA_Y,X
+      STA $0200+ACT_SPRITE_HILT+SPRITE_DATA_Y,X
+      ; and move blade forward
+      LDA $0200+ACT_SPRITE_BLADE+SPRITE_DATA_X,X
+      CLC
+      ADC #8
+      STA $0200+ACT_SPRITE_BLADE+SPRITE_DATA_X,X
+      
+    +end:
+    JMP ++
+  +:
+  SEC
+  SBC #1
+  BNE ++
+    ; 3 - left
+    LDX actor_sprite_pointer
+    
+    LDA #$2F
+    STA $0200+ACT_SPRITE_BLADE+SPRITE_DATA_I,X
+    LDA $0200+ACT_SPRITE_BLADE+SPRITE_DATA_A,X
+    AND #%00111111
+    ORA #%01000000
+    STA $0200+ACT_SPRITE_BLADE+SPRITE_DATA_A,X
+    LDA _actor_x
+    SEC
+    SBC #8
+    STA $0200+ACT_SPRITE_BLADE+SPRITE_DATA_X,X
+    LDA _actor_y
+    SEC
+    SBC #2
+    STA $0200+ACT_SPRITE_BLADE+SPRITE_DATA_Y,X
+    
+    LDA _first_frame_of_attack
+    BNE +end
+      
+      LDA #$2E
+      STA $0200+ACT_SPRITE_HILT+SPRITE_DATA_I,X
+      LDA $0200+ACT_SPRITE_HILT+SPRITE_DATA_A,X
+      AND #%00111111
+    ORA #%01000000
+      STA $0200+ACT_SPRITE_HILT+SPRITE_DATA_A,X
+      ; set hilt to where blade is
+      LDA $0200+ACT_SPRITE_BLADE+SPRITE_DATA_X,X
+      STA $0200+ACT_SPRITE_HILT+SPRITE_DATA_X,X
+      LDA $0200+ACT_SPRITE_BLADE+SPRITE_DATA_Y,X
+      STA $0200+ACT_SPRITE_HILT+SPRITE_DATA_Y,X
+      ; and move blade forward
+      LDA $0200+ACT_SPRITE_BLADE+SPRITE_DATA_X,X
+      SEC
+      SBC #8
+      STA $0200+ACT_SPRITE_BLADE+SPRITE_DATA_X,X
+      
+    +end:
+  ++:
+  
+  JMP +exit_draw_sword
+  no_sword:
+    LDX actor_sprite_pointer
+    LDA #$FF
+    STA $0200+ACT_SPRITE_BLADE+SPRITE_DATA_X,X
+    STA $0200+ACT_SPRITE_HILT+SPRITE_DATA_X,X
+    STA $0200+ACT_SPRITE_BLADE+SPRITE_DATA_Y,X
+    STA $0200+ACT_SPRITE_HILT+SPRITE_DATA_Y,X
+    
+  exit_draw_sword:
   RTS

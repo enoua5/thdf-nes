@@ -621,16 +621,16 @@ MACRO test_pause
   +:
 ENDM
 
+TOTAL_ATTACK_TIME .equ #$40
 MACRO swing_sword
   LDA actors+ACT_ATTKTIME,X
   BNE +already_attacking
   
   LDA actor_control
   AND A_BUTTON
-  BEQ +end_of_swing_sword_macro ; no sword attack made
+  BEQ +attack_over ; no sword attack made
   
-    ; 0x40 frames until attack ends
-    LDA #$40
+    LDA TOTAL_ATTACK_TIME
     STA actors+ACT_ATTKTIME,X
     
     ; mark attacker as "hit", making it impossible to hit self
@@ -654,6 +654,7 @@ MACRO swing_sword
   ;decrement attack time
   DEC actors+ACT_ATTKTIME,X
   BNE +end_of_swing_sword_macro
+  attack_over:
   
     ;attack is over
     LDA #0
@@ -689,8 +690,7 @@ MACRO shoot_fire
     ; update stats
     INC readout_update_req
   
-    ; 0x40 frames until attack ends
-    LDA #$40
+    LDA TOTAL_ATTACK_TIME
     STA actors+ACT_ATTKTIME,X
     
     ; mark attacker as "hit", making it impossible to hit self
@@ -873,7 +873,16 @@ MACRO shoot_fire
 ENDM
 
 MACRO check_sword_hit
-
+  LDA actors+ACT_SWORD_DATA,X
+  AND #%10000000 ; Attack is active bit
+  BNE +
+    JMP +end_sword
+  +:
+    
+    check_hit ACT_SWORD_DATA, ACT_SPRITE_BLADE, 0
+  
+  +end_sword:
+  LDX actor_data_pointer
 ENDM
 
 _subrout_enemies_in_room .equ generic_bytes+65

@@ -163,7 +163,12 @@ do_actor_hit:
   
   CMP _hit_attacker_roll
   BCC +
-    JMP +disp ; defender_roll >= attacker_roll, attack missed
+    ; defender_roll >= attacker_roll, attack missed
+    ; reset damage counter, so "MISS" will display
+    LDX _hit_defender
+    LDA #0
+    STA actors+ACT_READOUT_VALUE,X
+    JMP +disp 
   +:
   
   +find_damage:
