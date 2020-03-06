@@ -632,10 +632,12 @@ draw_sword:
     ORA #%10000000
     STA $0200+ACT_SPRITE_BLADE+SPRITE_DATA_A,X
     LDA _actor_x
+    SEC
+    SBC #3
     STA $0200+ACT_SPRITE_BLADE+SPRITE_DATA_X,X
     LDA _actor_y
     CLC
-    ADC #8
+    ADC #6
     STA $0200+ACT_SPRITE_BLADE+SPRITE_DATA_Y,X
     
     LDA _first_frame_of_attack
@@ -673,6 +675,8 @@ draw_sword:
     AND #%00111111
     STA $0200+ACT_SPRITE_BLADE+SPRITE_DATA_A,X
     LDA _actor_x
+    CLC
+    ADC #3
     STA $0200+ACT_SPRITE_BLADE+SPRITE_DATA_X,X
     LDA _actor_y
     SEC
