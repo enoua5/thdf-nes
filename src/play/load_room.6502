@@ -352,8 +352,10 @@ draw_chest:
   LDX player_room
   LDA dungeon_map,X
   AND #%00000010
-  CMP #0
   BEQ ++
+  LDA dungeon_map,X
+  AND #%11110000
+  BNE ++
     LDY #$3C ;first tile of chest
     
     ; get money ammount
@@ -409,8 +411,10 @@ draw_spirit:
   LDX player_room
   LDA dungeon_map,X
   AND #%00000100
-  CMP #0
   BEQ +
+  LDA dungeon_map,X
+  AND #%11110000
+  BNE +
     LDY #$38 ;first tile of spirit
   +:
   
@@ -512,8 +516,10 @@ draw_fountain:
   LDX player_room
   LDA dungeon_map,X
   AND #%00001000
-  CMP #0
   BEQ +
+  LDA dungeon_map,X
+  AND #%11110000
+  BNE +
     LDY #$60 ;first tile of fountain
   +:
   
