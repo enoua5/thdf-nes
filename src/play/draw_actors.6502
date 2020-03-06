@@ -128,19 +128,26 @@ draw_body:
   BNE +
   ; GOING DOWN
     LDA actor_sprite_rom_pointer
+    STA generic_bytes+14
     ; "ADC #0"
     ;display attack frame if attacking
     LDY actors+ACT_ATTKTIME,X
     BEQ +not_attacking
       CLC
       ADC #4
+      STA generic_bytes+14
+      ; mask out reflection
+      LDX actor_sprite_pointer
+      LDA $0200+ACT_SPRITE_HEAD+SPRITE_DATA_A,X
+      AND #%00111111
+      STA $0200+ACT_SPRITE_HEAD+SPRITE_DATA_A,X
+      
+      LDA $0200+ACT_SPRITE_BODY+SPRITE_DATA_A,X
+      AND #%00111111
+      STA $0200+ACT_SPRITE_BODY+SPRITE_DATA_A,X
+      
+      JMP +skip_step
     +not_attacking:
-    LDX actor_sprite_pointer
-    STA $0200+ACT_SPRITE_HEAD+SPRITE_DATA_I,X
-    
-    CLC
-    ADC #ACT_NUM_FRAMES
-    STA $0200+ACT_SPRITE_BODY+SPRITE_DATA_I,X
     
     ; get step side
     
@@ -165,6 +172,16 @@ draw_body:
     AND #%00111111
     ORA generic_bytes
     STA $0200+ACT_SPRITE_BODY+SPRITE_DATA_A,X
+    
+    +skip_step:
+    
+    LDA generic_bytes+14
+    LDX actor_sprite_pointer
+    STA $0200+ACT_SPRITE_HEAD+SPRITE_DATA_I,X
+    
+    CLC
+    ADC #ACT_NUM_FRAMES
+    STA $0200+ACT_SPRITE_BODY+SPRITE_DATA_I,X
     
     JMP ++
   +:
@@ -175,18 +192,25 @@ draw_body:
     LDA actor_sprite_rom_pointer
     CLC
     ADC #1
+    STA generic_bytes+14
     ;display attack frame if attacking
     LDY actors+ACT_ATTKTIME,X
     BEQ +not_attacking
       CLC
       ADC #4
+      STA generic_bytes+14
+      ; mask out reflection
+      LDX actor_sprite_pointer
+      LDA $0200+ACT_SPRITE_HEAD+SPRITE_DATA_A,X
+      AND #%00111111
+      STA $0200+ACT_SPRITE_HEAD+SPRITE_DATA_A,X
+      
+      LDA $0200+ACT_SPRITE_BODY+SPRITE_DATA_A,X
+      AND #%00111111
+      STA $0200+ACT_SPRITE_BODY+SPRITE_DATA_A,X
+      
+      JMP +skip_step
     +not_attacking:
-    LDX actor_sprite_pointer
-    STA $0200+ACT_SPRITE_HEAD+SPRITE_DATA_I,X
-    
-    CLC
-    ADC #ACT_NUM_FRAMES
-    STA $0200+ACT_SPRITE_BODY+SPRITE_DATA_I,X
     
     ; get step side
     
@@ -211,6 +235,16 @@ draw_body:
     AND #%00111111
     ORA generic_bytes
     STA $0200+ACT_SPRITE_BODY+SPRITE_DATA_A,X
+    
+    +skip_step:
+    
+    LDA generic_bytes+14
+    LDX actor_sprite_pointer
+    STA $0200+ACT_SPRITE_HEAD+SPRITE_DATA_I,X
+    
+    CLC
+    ADC #ACT_NUM_FRAMES
+    STA $0200+ACT_SPRITE_BODY+SPRITE_DATA_I,X
     JMP ++
   +:
   SEC
@@ -598,10 +632,12 @@ draw_sword:
     ORA #%10000000
     STA $0200+ACT_SPRITE_BLADE+SPRITE_DATA_A,X
     LDA _actor_x
+    SEC
+    SBC #3
     STA $0200+ACT_SPRITE_BLADE+SPRITE_DATA_X,X
     LDA _actor_y
     CLC
-    ADC #8
+    ADC #6
     STA $0200+ACT_SPRITE_BLADE+SPRITE_DATA_Y,X
     
     LDA _first_frame_of_attack
@@ -639,6 +675,8 @@ draw_sword:
     AND #%00111111
     STA $0200+ACT_SPRITE_BLADE+SPRITE_DATA_A,X
     LDA _actor_x
+    CLC
+    ADC #3
     STA $0200+ACT_SPRITE_BLADE+SPRITE_DATA_X,X
     LDA _actor_y
     SEC
