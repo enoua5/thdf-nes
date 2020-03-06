@@ -56,6 +56,10 @@ draw_room:
       STA rng_seed+0
       LDA generic_bytes+77
       STA rng_seed+1
+      
+      ; delete player fireball
+      LDA #$FF
+      STA actors+ACT_FIRE_Y
     +:
     
     LDA #0
