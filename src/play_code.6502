@@ -31,8 +31,11 @@ play_code:
     make_offer ; idk why I wrote this one as a macro.
     JMP ++
    +jumped_too_far:
-    JSR greyify
-  
+    CMP #2
+    BEQ +
+      INC paused
+      JSR greyify
+    +:
     LDA button_ondown
     AND START_BUTTON
     BEQ +end_playcode

@@ -26,19 +26,31 @@ ENDM
 
 MACRO load_pal pal_address
   ;load color pal
-  LDA $2002 ; reset the hight/low latch to high
-  LDA #$3F
-  STA $2006 ; write high byte
-  LDA #$00
-  STA $2006 ; PPU is now looking at $3F10; the color palette data
+  ;LDA $2002 ; reset the hight/low latch to high
+  ;LDA #$3F
+  ;STA $2006 ; write high byte
+  ;LDA #$00
+  ;STA $2006 ; PPU is now looking at $3F10; the color palette data
     
-  LDX #$00
-  -:
-    LDA pal_address, x
-    STA $2007
-    INX
-    CPX #$20
+  ;LDX #$00
+  ;-:
+  ;  LDA pal_address, x
+  ;  STA $2007
+  ;  INX
+  ;  CPX #$20
+  ;  BNE -
+  
+  LDY #$00
+  begin_nt_buffer_write #$3F, #$00
+    -:
+      LDA pal_address,Y
+      STA nt_buf_in_dt
+      JSR _write_to_nt_buffer
+    
+    INY
+    CPY #$20
     BNE -
+  end_nt_buffer_write
 ENDM
 
 MACRO load_nametable nt_number, nt_pointer

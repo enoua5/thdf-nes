@@ -323,6 +323,8 @@ IRQ:
   .org $E000
 colorpal1:
   .incbin "dat/pal.dat"
+colorpal2:
+  .incbin "dat/grey_pal.dat"
 titlescreen_name:
   .incbin "dat/title.nam"
 char_create_name:

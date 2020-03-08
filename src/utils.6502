@@ -230,14 +230,16 @@ modulo:
   RTS
   
 greyify:
-  LDA ppu_mask
-  ORA #%00000001 ; grey-scale to indicate paused
-  STA ppu_mask
+  load_pal colorpal2
+  ;LDA ppu_mask
+  ;ORA #%00000001 ; grey-scale to indicate paused
+  ;STA ppu_mask
   
   RTS
 
 ungreyify:
-  LDA ppu_mask
-  AND #%11111110 ; undo grey-scale
-  STA ppu_mask
+  load_pal colorpal1
+  ;LDA ppu_mask
+  ;AND #%11111110 ; undo grey-scale
+  ;STA ppu_mask
   RTS
