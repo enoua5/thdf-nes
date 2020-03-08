@@ -10,9 +10,19 @@ play_code:
   BEQ +
     JMP +jumped_too_far
   +:
+  LDA player_dead
+  BEQ +
+    JSR deadify
+    LDA #0
+    STA buttons
+    STA button_ondown
+  +:
+  
+  
+    JSR actor_tick
+    
     JSR update_stat_readout
     JSR draw_room
-    JSR actor_tick
     JSR draw_actors
     
     JSR check_room_move
@@ -21,20 +31,16 @@ play_code:
     make_offer ; idk why I wrote this one as a macro.
     JMP ++
    +jumped_too_far:
-    LDA ppu_mask
-    ORA #%00000001 ; grey-scale to indicate paused
-    STA ppu_mask
+    JSR greyify
   
     LDA button_ondown
     AND START_BUTTON
-    BEQ ++
+    BEQ +end_playcode
       LDA #0
       STA paused
       
-      LDA ppu_mask
-      AND #%11111110 ; undo grey-scale
-      STA ppu_mask
-  ++:
+      JSR ungreyify
+  +end_playcode:
   RTS
 
 check_room_move:

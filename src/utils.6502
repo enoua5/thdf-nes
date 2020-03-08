@@ -228,3 +228,16 @@ modulo:
   STA returns+0
   
   RTS
+  
+greyify:
+  LDA ppu_mask
+  ORA #%00000001 ; grey-scale to indicate paused
+  STA ppu_mask
+  
+  RTS
+
+ungreyify:
+  LDA ppu_mask
+  AND #%11111110 ; undo grey-scale
+  STA ppu_mask
+  RTS
