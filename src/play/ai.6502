@@ -12,7 +12,7 @@ run_ai:
     JMP +exit_run_ai
   +:
   
-  ;LDX actor_data_pointer
+  LDX actor_data_pointer
 
   LDA ai_state_msb
   BNE +
@@ -35,7 +35,7 @@ run_ai:
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 ai_scatter_phase:
-  LDA actor_data_pointer+ACT_AI_STATE
+  LDA actor_data_pointer+ACT_AI_STATE,X
   BNE +
     JSR ai_scatter
     JMP +exit
@@ -67,7 +67,7 @@ ai_scatter_phase:
   RTS
   
 ai_attack_phase:
-  LDA actor_data_pointer+ACT_AI_STATE
+  LDA actor_data_pointer+ACT_AI_STATE,X
   BNE +
     JSR ai_melee_approach
     JMP +exit
