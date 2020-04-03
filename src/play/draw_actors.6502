@@ -132,7 +132,8 @@ draw_body:
     ; "ADC #0"
     ;display attack frame if attacking
     LDY actors+ACT_ATTKTIME,X
-    BEQ +not_attacking
+    CPY ATTACK_COOLDOWN
+    BCC +not_attacking
       CLC
       ADC #4
       STA generic_bytes+14
@@ -195,7 +196,8 @@ draw_body:
     STA generic_bytes+14
     ;display attack frame if attacking
     LDY actors+ACT_ATTKTIME,X
-    BEQ +not_attacking
+    CPY ATTACK_COOLDOWN
+    BCC +not_attacking
       CLC
       ADC #4
       STA generic_bytes+14
@@ -287,7 +289,8 @@ draw_body:
     ;skip the step-side check if attacking
     LDA #-1 ; default step side for if we skip
     LDY actors+ACT_ATTKTIME,X
-    BNE +attacking
+    CPY ATTACK_COOLDOWN
+    BCS +attacking
       LDA actors+ACT_ANIM_TIMER,X
       AND #%00001000
       ASL
@@ -304,7 +307,8 @@ draw_body:
     ADC generic_bytes
     ;display attack frame if attacking
     LDY actors+ACT_ATTKTIME,X
-    BEQ +not_attacking
+    CPY ATTACK_COOLDOWN
+    BCC +not_attacking
       CLC
       ADC #4
     +not_attacking:

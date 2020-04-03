@@ -1,3 +1,6 @@
+TOTAL_ATTACK_TIME .equ #$40
+ATTACK_COOLDOWN .equ #$20
+
 CHEST_LOCATION_X .equ #48
 CHEST_LOCATION_Y .equ #140
 ROOM_DATA_CHEST_BIT .equ #%00000010
@@ -124,8 +127,11 @@ MACRO move_actor
     
   +maybe_movement:
   LDA actors+ACT_ATTKTIME,X
-  BEQ +yes_movement ; if not attacking, can move
-    JMP +no_movement
+  ;BEQ +yes_movement ; if not attacking, can move
+  ;  JMP +no_movement
+  CMP ATTACK_COOLDOWN
+  BCC +yes_movement
+  JMP +no_movement
   
   +yes_movement:
     LDA actor_control
@@ -629,7 +635,6 @@ MACRO test_pause
   +:
 ENDM
 
-TOTAL_ATTACK_TIME .equ #$40
 MACRO swing_sword
   LDA actors+ACT_ATTKTIME,X
   BNE +already_attacking
@@ -661,7 +666,9 @@ MACRO swing_sword
   +already_attacking:
   ;decrement attack time
   DEC actors+ACT_ATTKTIME,X
-  BNE +end_of_swing_sword_macro
+  ;BNE +end_of_swing_sword_macro
+  CMP ATTACK_COOLDOWN
+  BCS +end_of_swing_sword_macro
   attack_over:
   
     ;attack is over
