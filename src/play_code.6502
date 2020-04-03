@@ -18,7 +18,8 @@ play_code:
     STA button_ondown
   +:
   
-  
+    JSR inc_ai_timers
+    
     JSR actor_tick
     
     JSR update_stat_readout
@@ -106,3 +107,39 @@ check_room_move:
   
   
   RTS
+  
+inc_ai_timers:
+  
+    LDA ai_state_timer
+    CLC
+    ADC #1
+    STA ai_state_timer
+    
+    LDA ai_state_msb
+    ADC #0
+    STA ai_state_msb
+    
+    LDA ai_state_timer
+    BNE ++ ; THE FOLLOWING CODE IS ONLY RAN EVERY 256 FAMES
+    
+    LDA ai_state_msb
+    CMP #1
+    BEQ +set_default_state
+    
+    CMP #3 ; Three action cycle
+    BNE ++ ; do noting on msb = 2
+    
+      LDA #0
+      STA ai_state_msb
+      
+    
+    +set_default_state:
+    
+      LDA #0 ; scatter
+      STA warrior+ACT_AI_STATE
+      STA theif+ACT_AI_STATE
+      STA mage+ACT_AI_STATE
+      STA tank+ACT_AI_STATE
+      ; dragon is not affected by phase changes
+    ++:
+    RTS

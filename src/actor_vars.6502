@@ -1,4 +1,4 @@
-  ACTOR_DATA_LENGTH .equ 22
+  ACTOR_DATA_LENGTH .equ 24
 
   actors .dsb 0 ;anchor for finding actors
   player .dsb ACTOR_DATA_LENGTH
@@ -40,3 +40,5 @@
   ACT_FIRE_ANIM_TIMER .equ 19
   ACT_READOUT_TIMER .equ 20
   ACT_READOUT_VALUE .equ 21
+  ACT_AI_STATE .equ 22
+  ACT_AI_SCATTER_CORNER .equ 23

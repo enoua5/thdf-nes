@@ -116,6 +116,9 @@ MODE_DEATH = 3
     player_dead .dsb 1 ; doubles as death animation frame counter
     death_curtain_pos .dsb 1
     death_curtain_pos_msb .dsb 1
+    
+    ai_state_timer .dsb 1
+    ai_state_msb .dsb 1
                      
   .ende
   

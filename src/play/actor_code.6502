@@ -1,4 +1,5 @@
 .incsrc "src/play/actor_macros.6502"
+.incsrc "src/play/ai.6502"
 
 ACT_SPRITE_HEAD  .equ 0
 ACT_SPRITE_BODY  .equ 4
@@ -86,19 +87,6 @@ actor_tick:
   BNE -
   
   
-  RTS
-
-run_ai:
-  LDA player_dead
-  BEQ +
-    LDA #0 ; if the player dies, the enemies stop doing
-    JMP +exit_run_ai
-  +:
-  LDA #B_BUTTON
-  
-  +exit_run_ai:
-  AND #%11001111 ; AI can't press start or select
-  STA actor_control
   RTS
 
 indv_actor_tick: ; I'm sorry for my inconsistant naming conventions

@@ -1,0 +1,216 @@
+MELEE_ZONE_RADIUS .equ #12
+MELEE_EXT_ZONE_RADIUS .equ #40
+FIRE_STRIP_WIDTH .equ #16
+FIRE_FLANK_WIDTH .equ #48
+SCATTER_AREA_SIZE .equ #25
+
+
+run_ai:
+  LDA player_dead
+  BEQ +
+    LDA #0 ; if the player dies, the enemies stop doing
+    JMP +exit_run_ai
+  +:
+  
+  ;LDX actor_data_pointer
+
+  LDA ai_state_msb
+  BNE +
+    ; msb = 0, scatter
+    
+    JSR ai_scatter_phase
+    
+    JMP +exit_run_ai
+  +:
+    ; msb > 0, attack
+    
+    JSR ai_attack_phase
+  
+  +exit_run_ai:
+  LDA actor_control
+  AND #%11001111 ; AI can't press start or select
+  STA actor_control
+  RTS
+  
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+ai_scatter_phase:
+  LDA actor_data_pointer+ACT_AI_STATE
+  BNE +
+    JSR ai_scatter
+    JMP +exit
+  +:
+  SEC
+  SBC #1
+  BNE +
+    JSR ai_flee
+    JMP +exit
+  +:
+  SEC
+  SBC #1
+  BNE +
+    JSR ai_flee_melee_approach
+    JMP +exit
+  +: 
+  SEC
+  SBC #1
+  BNE +
+    JSR ai_flee_melee_attack
+    JMP +exit
+  +:
+  
+  ; code shouldn't get here, but just in case:
+  LDA #0
+  STA actor_data_pointer+ACT_AI_STATE
+
+  +exit:
+  RTS
+  
+ai_attack_phase:
+  LDA actor_data_pointer+ACT_AI_STATE
+  BNE +
+    JSR ai_melee_approach
+    JMP +exit
+  +:
+  SEC
+  SBC #1
+  BNE +
+    JSR ai_melee_attack
+    JMP +exit
+  +:
+  SEC
+  SBC #1
+  BNE +
+    JSR ai_range_approach
+    JMP +exit
+  +: 
+  SEC
+  SBC #1
+  BNE +
+    JSR ai_range_attack
+    JMP +exit
+  +:
+  
+  ; code shouldn't get here, but just in case:
+  LDA #0
+  STA actor_data_pointer+ACT_AI_STATE
+
+  +exit:
+  RTS
+  
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+ai_melee_approach: ; a0
+  ; action:
+  ; move towards the nearest corner of the MELEE_ZONE
+  ; level 3 and up, will walk 1 axis if in FIRE_DANGER
+  
+  ; state shifts:
+  ; if in MELEE_ZONE and not waiting for attack cooldown, enter melee attack
+  ; if first frame of phase, and has fire, 1/4 of entering range approach
+  
+  LDA #0
+  STA actor_control
+  RTS
+  
+ai_melee_attack: ; a1
+  ; actions:
+  ; move towards in-line axis of player
+  ; face player
+  ; if above conditions are met, swing
+  
+  ; state shifts:
+  ; if swinging, enter melee approach
+  ; if not within MELEE_ZONE, enter melee approach
+  
+  LDA #0
+  STA actor_control
+  RTS
+  
+ai_range_approach: ; a2
+  ; actions:
+  ; move towards nearest FIRE_FLANK
+  ; if in danger of player fire, move perpendicular to fire
+  
+  ; state shifts:
+  ; if in FIRE_FLANK, and player fireball not on field, and own fireball not on field, enter range attack
+
+  LDA #0
+  STA actor_control
+  RTS
+  
+ai_range_attack: ; a3
+  ; actions:
+  ; move towards fire zone
+  ; face player
+  ; if above conditions are met, fire
+  
+  ; state shifts:
+  ; if out of fireballs, enter melee approach
+  ; if own fireball is on field, enter range approach
+  
+  LDA #0
+  STA actor_control
+  RTS
+  
+ai_scatter: ; s0
+  ; actions:
+  ; move towards scatter area as assigned by class
+  ; if in target scatter area, move in random direction, reroll every 16 ticks
+  
+  ; state shifts:
+  ; if in danger, enter flee
+  
+  LDA #0
+  STA actor_control
+  RTS
+
+ai_flee: ; s1
+  ; actions:
+  ; move towards a randomly selected corner
+  
+  ; state shifts:
+  ; if in target scatter area and still in danger, pick a new corner
+  ; if in melee zone, and state_timer < 32, enter flee melee attack
+  LDA #0
+  STA actor_control
+  RTS
+  
+ai_flee_melee_approach: ; s2
+  ; change state to flee
+  
+  JSR ai_flee
+  RTS
+  
+ai_flee_melee_attack: ; s3
+  JSR ai_melee_attack
+  RTS
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;  
+
+ai_is_in_melee_zone:
+  RTS
+  
+ai_is_in_ext_melee_zone:
+  RTS
+  
+ai_is_in_fire_zone:
+  RTS
+  
+ai_is_in_diag_fire_zone:
+  RTS
+  
+ai_is_in_fire_flank:
+  RTS
+
+ai_is_in_diag_fire_flank:
+  RTS
+  
+ai_in_danger_of_fire:
+  RTS
+  
+ai_in_danger:
+  RTS
+  
+ai_is_in_scatter_area:
+  RTS
