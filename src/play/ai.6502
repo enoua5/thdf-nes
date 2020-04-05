@@ -9,10 +9,16 @@ run_ai:
   LDA player_dead
   BEQ +
     LDA #0 ; if the player dies, the enemies stop doing
+    STA actor_control
     JMP +exit_run_ai
   +:
   
   LDX actor_data_pointer
+  CPX #(<dragon)-(<actors)
+  BNE +
+    JSR ai_attack_phase ; dragon only attacks
+    JMP +exit_run_ai
+  +:
 
   LDA ai_state_msb
   BNE +
@@ -96,6 +102,10 @@ ai_attack_phase:
   STA actor_data_pointer+ACT_AI_STATE
 
   +exit:
+  JSR rng
+  LDA rng_seed+0
+  STA actor_control
+  
   RTS
   
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
