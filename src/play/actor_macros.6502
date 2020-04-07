@@ -919,6 +919,9 @@ MACRO move_and_check_fire_hit
     CLC
     ADC actors+ACT_FIRE_YVEL,X
     STA actors+ACT_FIRE_Y,X
+    
+    CLC
+    INC actors+ACT_FIRE_ANIM_TIMER,X
     ; delete when off screen
     LDA actors+ACT_FIRE_Y,X
     CMP #8
@@ -942,7 +945,7 @@ MACRO move_and_check_fire_hit
       STA actors+ACT_FIRE_Y,X
     JMP +end_fire
     +do_not_delete_fire:
-    
+   
     check_hit ACT_FIRE_DATA, ACT_SPRITE_FIRE, 1
   
   +end_fire:
