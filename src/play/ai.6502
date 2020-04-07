@@ -54,7 +54,7 @@ run_ai:
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 ai_scatter_phase:
-  LDA actor_data_pointer+ACT_AI_STATE,X
+  LDA actors+ACT_AI_STATE,X
   BNE +
     JSR ai_scatter
     JMP +exit
@@ -89,7 +89,7 @@ ai_attack_phase:
   LDA #0
   STA actor_control
   
-  LDA actor_data_pointer+ACT_AI_STATE,X
+  LDA actors+ACT_AI_STATE,X
   BNE +
     JSR ai_melee_approach
     JMP +exit
@@ -220,9 +220,31 @@ ai_melee_approach: ; a0
   
   ; state shifts:
   ; if in MELEE_ZONE and not waiting for attack cooldown, enter melee attack
-  ; if first frame of phase, and has fire, 1/4 of entering range approach
+  ; if first frame of phase, and has fire, 1/2 of entering range approach
   +state_shifts:
+  JSR ai_is_in_melee_zone
+  BEQ +
+    LDA #1 ; melee attack
+    STA actors+ACT_AI_STATE,x
+    JMP +exit
+  +:
   
+  LDA ai_state_timer
+  BNE +exit
+  LDA actors+ACT_MANA,x
+  BEQ +exit
+  
+  JSR rng
+  LDX actor_data_pointer
+  LDA rng_seed+0
+  AND #%00000001
+  BNE +exit
+  
+  LDA #2 ; range approach
+  STA actors+ACT_AI_STATE,x
+  
+  
+  +exit:
   RTS
   
 ai_melee_attack: ; a1
@@ -247,7 +269,7 @@ ai_range_approach: ; a2
   ; state shifts:
   ; if in FIRE_FLANK, and player fireball not on field, and own fireball not on field, enter range attack
 
-  LDA #0
+  LDA B_BUTTON
   STA actor_control
   RTS
   
@@ -301,6 +323,36 @@ ai_flee_melee_attack: ; s3
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;  
 
 ai_is_in_melee_zone:
+  LDA player+ACT_X
+  SEC
+  SBC MELEE_ZONE_RADIUS
+  CMP _actor_adj_x
+  BCS +not_in_zone
+  
+  LDA player+ACT_X
+  CLC
+  ADC MELEE_ZONE_RADIUS
+  CMP _actor_adj_x
+  BCC +not_in_zone
+  
+  LDA player+ACT_Y
+  SEC
+  SBC MELEE_ZONE_RADIUS
+  CMP _actor_adj_y
+  BCS +not_in_zone
+  
+  LDA player+ACT_Y
+  CLC
+  ADC MELEE_ZONE_RADIUS
+  CMP _actor_adj_y
+  BCC +not_in_zone
+  
+  LDA #1
+  JMP +exit
+  
+  +not_in_zone:
+  LDA #0
+  +exit:
   RTS
   
 ai_is_in_ext_melee_zone:
