@@ -1,9 +1,13 @@
-MELEE_ZONE_RADIUS .equ #12
+MELEE_ZONE_RADIUS .equ #20
 MELEE_EXT_ZONE_RADIUS .equ #40
 FIRE_STRIP_WIDTH .equ #16
 FIRE_FLANK_WIDTH .equ #48
 SCATTER_AREA_SIZE .equ #25
 
+_actor_adj_x .equ generic_bytes+18
+_actor_adj_y .equ generic_bytes+19
+_target_x .equ generic_bytes+21
+_target_y .equ generic_bytes+22
 
 run_ai:
   LDA player_dead
@@ -14,6 +18,15 @@ run_ai:
   +:
   
   LDX actor_data_pointer
+  
+  ; make the actor's position for ai the center of its hitbox
+  LDA actors+ACT_X,X
+  SEC
+  SBC #4
+  STA _actor_adj_x
+  LDA actors+ACT_Y,X
+  STA _actor_adj_y
+  
   CPX #(<dragon)-(<actors)
   BNE +
     JSR ai_attack_phase ; dragon only attacks
@@ -73,6 +86,9 @@ ai_scatter_phase:
   RTS
   
 ai_attack_phase:
+  LDA #0
+  STA actor_control
+  
   LDA actor_data_pointer+ACT_AI_STATE,X
   BNE +
     JSR ai_melee_approach
@@ -102,9 +118,6 @@ ai_attack_phase:
   STA actor_data_pointer+ACT_AI_STATE
 
   +exit:
-  JSR rng
-  LDA rng_seed+0
-  STA actor_control
   
   RTS
   
@@ -115,12 +128,101 @@ ai_melee_approach: ; a0
   ; move towards the nearest corner of the MELEE_ZONE
   ; level 3 and up, will walk 1 axis if in FIRE_DANGER
   
+  ; call ai_get_direction to figure out which corner to go to
+  call4 ai_get_direction, _actor_adj_x, _actor_adj_y, player+ACT_X, player+ACT_Y
+  
+  LDA returns+0
+  AND DOWN_BUTTON
+  BEQ +player_is_up
+    
+    LDA returns+0
+    AND LEFT_BUTTON
+    BEQ +player_is_right
+      
+      ; player is down left, target opposite
+      LDA player+ACT_X
+      CLC
+      ADC MELEE_ZONE_RADIUS-8
+      STA _target_x
+      
+      LDA player+ACT_Y
+      SEC
+      SBC MELEE_ZONE_RADIUS-2
+      STA _target_y
+      
+      call4 ai_get_direction, _actor_adj_x, _actor_adj_y, _target_x, _target_y
+      
+      LDA returns+0
+      STA actor_control
+      
+      JMP +state_shifts
+    +player_is_right:
+    
+      ; player is down right, target opposite
+      LDA player+ACT_X
+      SEC
+      SBC MELEE_ZONE_RADIUS-2
+      STA _target_x
+      
+      LDA player+ACT_Y
+      SEC
+      SBC MELEE_ZONE_RADIUS-2
+      STA _target_y
+      
+      call4 ai_get_direction, _actor_adj_x, _actor_adj_y, _target_x, _target_y
+      
+      LDA returns+0
+      STA actor_control
+    
+      JMP +state_shifts
+  +player_is_up:
+    
+    LDA returns+0
+    AND LEFT_BUTTON
+    BEQ +player_is_right
+    
+      ; player is up left, target opposite
+      LDA player+ACT_X
+      CLC
+      ADC MELEE_ZONE_RADIUS-8
+      STA _target_x
+      
+      LDA player+ACT_Y
+      CLC
+      ADC MELEE_ZONE_RADIUS-2
+      STA _target_y
+      
+      call4 ai_get_direction, _actor_adj_x, _actor_adj_y, _target_x, _target_y
+      
+      LDA returns+0
+      STA actor_control
+    
+      JMP +state_shifts
+    +player_is_right:
+    
+      ; player is up right, target opposite
+      LDA player+ACT_X
+      CLC
+      SBC MELEE_ZONE_RADIUS-2
+      STA _target_x
+      
+      LDA player+ACT_Y
+      CLC
+      ADC MELEE_ZONE_RADIUS-2
+      STA _target_y
+      
+      call4 ai_get_direction, _actor_adj_x, _actor_adj_y, _target_x, _target_y
+      
+      LDA returns+0
+      STA actor_control
+    
+  
+  
   ; state shifts:
   ; if in MELEE_ZONE and not waiting for attack cooldown, enter melee attack
   ; if first frame of phase, and has fire, 1/4 of entering range approach
+  +state_shifts:
   
-  LDA #0
-  STA actor_control
   RTS
   
 ai_melee_attack: ; a1
@@ -223,4 +325,51 @@ ai_in_danger:
   RTS
   
 ai_is_in_scatter_area:
+  RTS
+  
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+ai_get_direction:
+  ; takes actor x,y on a0, a1; target x,y on a2, a3
+  ; returns buttons to direction on r0
+  
+  LDA #0
+  STA returns+0
+  
+  LDA arguments+0
+  CMP arguments+2 ; cmp x co-ords
+  BEQ +check_y ; if they're equal, press no l/r buttons
+  BCC +go_right
+  
+    LDA LEFT_BUTTON
+    ORA returns+0
+    STA returns+0
+    
+    JMP +check_y
+  
+  +go_right:
+  
+    LDA RIGHT_BUTTON
+    ORA returns+0
+    STA returns+0
+    
+  +check_y:
+  
+  LDA arguments+1
+  CMP arguments+3 ; cmp y co-ords
+  BEQ +done ; if they're equal, press no u/d buttons
+  BCC +go_down
+  
+    LDA UP_BUTTON
+    ORA returns+0
+    STA returns+0
+    
+    JMP +done
+  
+  +go_down:
+  
+    LDA DOWN_BUTTON
+    ORA returns+0
+    STA returns+0
+  
+  +done:
   RTS

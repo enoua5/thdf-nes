@@ -190,7 +190,7 @@ MACRO make_offer
   
     JMP +offer_made
   +:
-  
+
   check_onStairs
   BEQ +
     LDA #1
