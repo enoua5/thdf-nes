@@ -81,7 +81,7 @@ ai_scatter_phase:
   
   ; code shouldn't get here, but just in case:
   LDA #0
-  STA actor_data_pointer+ACT_AI_STATE
+  STA actors+ACT_AI_STATE,X
 
   +exit:
   RTS
@@ -115,10 +115,7 @@ ai_attack_phase:
   +:
   
   ; code shouldn't get here, but just in case:
-  ;LDA #0
-  JSR rng
-  LDA rng_seed+0
-  LDX actor_data_pointer
+  LDA #0
   STA actors+ACT_AI_STATE,X
 
   +exit:
@@ -272,6 +269,8 @@ ai_melee_approach: ; a0
   +state_shifts:
   JSR ai_is_in_melee_zone
   BEQ +
+  LDA actors+ACT_ATTKTIME,X
+  BNE +
     LDA #1 ; melee attack
     STA actors+ACT_AI_STATE,x
     JMP +exit
@@ -305,7 +304,7 @@ ai_melee_attack: ; a1
   ; if swinging, enter melee approach
   ; if not within MELEE_ZONE, enter melee approach
   
-  LDA #0
+  LDA #A_BUTTON
   STA actor_control
   RTS
   
@@ -418,6 +417,12 @@ ai_scatter: ; s0
   
   JSR ai_in_danger
   BEQ +
+    JSR rng
+    LDA rng_seed+0
+    AND #%00000011 ; mask to get a corner number
+    LDX actor_data_pointer
+    STA actors+ACT_AI_SCATTER_CORNER,X
+    
     LDA #1
     STA actors+ACT_AI_STATE,X
   +:
@@ -427,12 +432,74 @@ ai_scatter: ; s0
 ai_flee: ; s1
   ; actions:
   ; move towards a randomly selected corner
+  LDA actors+ACT_AI_SCATTER_CORNER,X
+  BNE +
+    LDA #0
+    STA _target_x
+    LDA #0
+    STA _target_y
+    JMP +go_that_dir
+  +:
+  SEC
+  SBC #1
+  BNE +
+    LDA #250
+    STA _target_x
+    LDA #0
+    STA _target_y
+    JMP +go_that_dir
+  +:
+  SEC
+  SBC #1
+  BNE +
+    LDA #0
+    STA _target_x
+    LDA #250
+    STA _target_y
+    JMP +go_that_dir
+  +:
+  ;SEC
+  ;DEC
+  ;BNE +
+    LDA #250
+    STA _target_x
+    LDA #250
+    STA _target_y
+    JMP +go_that_dir
+  ;+:
+  ;SEC
+  ;DEC
+  +go_that_dir:
+  call4 ai_get_direction, _actor_adj_x, _actor_adj_y, _target_x, _target_y 
+  LDA returns+0
+  STA actor_control
+  JMP +state_shifts
   
   ; state shifts:
   ; if in target scatter area and still in danger, pick a new corner
-  ; if in melee zone, and state_timer < 32, enter flee melee attack
-  LDA #0
-  STA actor_control
+  ; if in melee zone, and state_timer > 32, enter flee melee attack
+  +state_shifts:
+  JSR ai_is_in_scatter_area
+  BEQ +
+  JSR ai_in_danger
+  BEQ +
+    ; this corner is also dangerous; pick a new one
+    JSR rng
+    LDA rng_seed+0
+    AND #%00000011 ; mask to get a corner number
+    LDX actor_data_pointer
+    STA actors+ACT_AI_SCATTER_CORNER,X
+  +:
+  
+  JSR ai_is_in_melee_zone
+  BEQ +
+  LDA ai_state_timer
+  CMP #32
+  BCC +
+    LDA #3
+    STA actors+ACT_AI_STATE,X
+  +:
+  
   RTS
   
 ai_flee_melee_approach: ; s2
@@ -625,7 +692,7 @@ ai_in_danger_of_fire:
   RTS
   
 ai_in_danger:
-  JSR ai_is_in_fire_zone
+  JSR ai_in_danger_of_fire
   BNE +exit
   
   JSR ai_is_in_ext_melee_zone
