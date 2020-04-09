@@ -1,4 +1,4 @@
-  ACTOR_DATA_LENGTH .equ 24
+  ACTOR_DATA_LENGTH .equ 25
 
   actors .dsb 0 ;anchor for finding actors
   player .dsb ACTOR_DATA_LENGTH
@@ -42,3 +42,4 @@
   ACT_READOUT_VALUE .equ 21
   ACT_AI_STATE .equ 22
   ACT_AI_SCATTER_CORNER .equ 23
+  ACT_AI_GENERIC_BYTE .equ 24

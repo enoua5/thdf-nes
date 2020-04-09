@@ -115,8 +115,11 @@ ai_attack_phase:
   +:
   
   ; code shouldn't get here, but just in case:
-  LDA #0
-  STA actor_data_pointer+ACT_AI_STATE
+  ;LDA #0
+  JSR rng
+  LDA rng_seed+0
+  LDX actor_data_pointer
+  STA actors+ACT_AI_STATE,X
 
   +exit:
   
@@ -129,13 +132,8 @@ ai_melee_approach: ; a0
   ; move towards the nearest corner of the MELEE_ZONE
   ; level 3 and up, will walk 1 axis if in FIRE_DANGER
   
-  LDA player_floor
-  CMP #3
-  BCC +not_that_smart_yet
-    JSR ai_is_in_diag_fire_zone
-    LDA returns+0
-    STA generic_bytes+15
-  +not_that_smart_yet:
+  JSR ai_in_danger_of_diag_fire
+  STA generic_bytes+15
   ; call ai_get_direction to figure out which corner to go to
   call4 ai_get_direction, _actor_adj_x, _actor_adj_y, player+ACT_X, player+ACT_Y
   LDA returns+0
@@ -171,7 +169,7 @@ ai_melee_approach: ; a0
         JMP +state_shifts
       +:
       
-      LDA LEFT_BUTTON
+      LDA DOWN_BUTTON
       EOR #$FF
       AND actor_control
       STA actor_control
@@ -341,12 +339,89 @@ ai_scatter: ; s0
   ; actions:
   ; move towards scatter area as assigned by class
   ; if in target scatter area, move in random direction, reroll every 16 ticks
+  LDA #0
+  STA actor_control
+  
+  LDA ai_state_timer
+  BNE +
+    JSR set_default_corner
+  +:
+  
+  JSR ai_is_in_scatter_area
+  BNE +arbitrary_dir
+  
+  LDA actors+ACT_AI_SCATTER_CORNER,X
+  BNE +
+    LDA #0
+    STA _target_x
+    LDA #0
+    STA _target_y
+    JMP +go_that_dir
+  +:
+  SEC
+  SBC #1
+  BNE +
+    LDA #250
+    STA _target_x
+    LDA #0
+    STA _target_y
+    JMP +go_that_dir
+  +:
+  SEC
+  SBC #1
+  BNE +
+    LDA #0
+    STA _target_x
+    LDA #250
+    STA _target_y
+    JMP +go_that_dir
+  +:
+  ;SEC
+  ;DEC
+  ;BNE +
+    LDA #250
+    STA _target_x
+    LDA #250
+    STA _target_y
+    JMP +go_that_dir
+  ;+:
+  ;SEC
+  ;DEC
+  
+  
+  +go_that_dir:
+  call4 ai_get_direction, _actor_adj_x, _actor_adj_y, _target_x, _target_y 
+  LDA returns+0
+  STA actor_control
+  JMP +state_shifts
+  
+  +arbitrary_dir:
+  ;JMP rng
+  ;LDA rng_seed+0
+  ;LDX actor_data_pointer
+  LDA ai_state_timer
+  AND #%00001111 ; every 16 frames
+  BNE +
+    JSR rng
+    LDA rng_seed+0
+    AND #%00001111 ; mask to just directions
+    LDX actor_data_pointer
+    STA actors+ACT_AI_GENERIC_BYTE,X
+  +:
+  
+  LDA actors+ACT_AI_GENERIC_BYTE,X
+  STA actor_control
   
   ; state shifts:
   ; if in danger, enter flee
+  +state_shifts:
   
-  LDA #0
-  STA actor_control
+  JSR ai_in_danger
+  BEQ +
+    LDA #1
+    STA actors+ACT_AI_STATE,X
+  +:
+  
   RTS
 
 ai_flee: ; s1
@@ -401,17 +476,81 @@ ai_is_in_melee_zone:
   BCC +not_in_zone
   
   LDA #1
+  STA returns+0
   JMP +exit
   
   +not_in_zone:
   LDA #0
+  STA returns+0
   +exit:
   RTS
   
 ai_is_in_ext_melee_zone:
+  LDA player+ACT_X
+  SEC
+  SBC MELEE_EXT_ZONE_RADIUS
+  CMP _actor_adj_x
+  BCS +not_in_zone
+  
+  LDA player+ACT_X
+  CLC
+  ADC MELEE_EXT_ZONE_RADIUS
+  CMP _actor_adj_x
+  BCC +not_in_zone
+  
+  LDA player+ACT_Y
+  SEC
+  SBC MELEE_EXT_ZONE_RADIUS
+  CMP _actor_adj_y
+  BCS +not_in_zone
+  
+  LDA player+ACT_Y
+  CLC
+  ADC MELEE_EXT_ZONE_RADIUS
+  CMP _actor_adj_y
+  BCC +not_in_zone
+  
+  LDA #1
+  STA returns+0
+  JMP +exit
+  
+  +not_in_zone:
+  LDA #0
+  STA returns+0
+  +exit:
   RTS
   
 ai_is_in_fire_zone:
+  LDA #0
+  STA returns+0
+  
+  LDA player+ACT_X
+  CLC
+  ADC FIRE_STRIP_WIDTH/2
+  CMP _actor_adj_x
+  BCC + ; branch on actor right of right edge of fire zone
+    SEC
+    SBC FIRE_STRIP_WIDTH
+    CMP _actor_adj_x
+    BCC +yes
+  +:
+  
+  LDA player+ACT_Y
+  CLC
+  ADC FIRE_STRIP_WIDTH/2
+  CMP _actor_adj_y
+  BCC + ; branch on actor below bottom edge of fire zone
+    SEC
+    SBC FIRE_STRIP_WIDTH
+    CMP _actor_adj_y
+    BCC +yes
+  +:
+  
+  JMP +exit
+  +yes:
+    LDA #1
+    STA returns+0
+  +exit:
   RTS
   
 ai_is_in_diag_fire_zone:
@@ -456,18 +595,120 @@ ai_in_danger_of_diag_fire:
   LDA player+ACT_MANA
   BEQ +no
   
+  LDA player_floor
+  CMP #3
+  BCC +no ; they get smart to diag fire shots on floor 3
+  
   JSR ai_is_in_diag_fire_zone
+  JMP +exit
   
   +no:
+  LDA #0
+  STA returns+0
+  +exit:
   RTS
 
 ai_in_danger_of_fire:
+  LDA player+ACT_MANA
+  BEQ +no
+  
+  JSR ai_is_in_fire_zone
+  BNE +exit
+  
+  JSR ai_is_in_diag_fire_zone
+  BNE +exit
+  
+  +no:
+  LDA #0
+  STA returns+0
+  +exit:
   RTS
   
 ai_in_danger:
+  JSR ai_is_in_fire_zone
+  BNE +exit
+  
+  JSR ai_is_in_ext_melee_zone
+  BNE +exit
+  
+  LDA #0
+  STA returns+0
+  
+  +exit:
   RTS
   
 ai_is_in_scatter_area:
+  LDA actors+ACT_AI_SCATTER_CORNER,X
+  BNE +
+    LDA #$24
+    STA _target_x
+    LDA #$1F
+    STA _target_y
+    JMP +do_check
+  +:
+  SEC
+  SBC #1
+  BNE +
+    LDA #$DC
+    STA _target_x
+    LDA #$1F
+    STA _target_y
+    JMP +do_check
+  +:
+  SEC
+  SBC #1
+  BNE +
+    LDA #$24
+    STA _target_x
+    LDA #$9B
+    STA _target_y
+    JMP +do_check
+  +:
+  ;SEC
+  ;SBC #1
+  ;BNE +
+    LDA #$DC
+    STA _target_x
+    LDA #$9B
+    STA _target_y
+  ;  JMP +do_check
+  ;+:
+  ;SEC
+  ;SBC #1
+  
+  +do_check:
+  LDA _target_x
+  SEC
+  SBC SCATTER_AREA_SIZE
+  CMP _actor_adj_x
+  BCS +not_in_zone
+  
+  LDA _target_x
+  CLC
+  ADC SCATTER_AREA_SIZE
+  CMP _actor_adj_x
+  BCC +not_in_zone
+  
+  LDA _target_y
+  SEC
+  SBC SCATTER_AREA_SIZE
+  CMP _actor_adj_y
+  BCS +not_in_zone
+  
+  LDA _target_y
+  CLC
+  ADC SCATTER_AREA_SIZE
+  CMP _actor_adj_y
+  BCC +not_in_zone
+  
+  LDA #1
+  STA returns+0
+  JMP +exit
+  
+  +not_in_zone:
+  LDA #0
+  STA returns+0
+  +exit:
   RTS
   
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -515,4 +756,29 @@ ai_get_direction:
     STA returns+0
   
   +done:
+  RTS
+  
+set_default_corner:
+  LDX actor_data_pointer
+  CPX #(<warrior)-(<actors)
+  BNE +
+    LDA #0
+    STA actors+ACT_AI_SCATTER_CORNER,X
+  +:
+  CPX #(<theif)-(<actors)
+  BNE +
+    LDA #1
+    STA actors+ACT_AI_SCATTER_CORNER,X
+  +:
+  CPX #(<mage)-(<actors)
+  BNE +
+    LDA #2
+    STA actors+ACT_AI_SCATTER_CORNER,X
+  +:
+  CPX #(<tank)-(<actors)
+  BNE +
+    LDA #3
+    STA actors+ACT_AI_SCATTER_CORNER,X
+  +:
+  
   RTS

@@ -120,7 +120,9 @@ inc_ai_timers:
     STA ai_state_msb
     
     LDA ai_state_timer
-    BNE ++ ; THE FOLLOWING CODE IS ONLY RAN EVERY 256 FAMES
+    BNE ++
+    
+    ; THE FOLLOWING CODE IS ONLY RAN EVERY 256 FAMES
     
     LDA ai_state_msb
     CMP #1
@@ -140,6 +142,6 @@ inc_ai_timers:
       STA theif+ACT_AI_STATE
       STA mage+ACT_AI_STATE
       STA tank+ACT_AI_STATE
-      ; dragon is not affected by phase changes
+      STA dragon+ACT_AI_STATE
     ++:
     RTS
