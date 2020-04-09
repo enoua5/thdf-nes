@@ -1,6 +1,7 @@
 MELEE_ZONE_RADIUS .equ #20
 MELEE_EXT_ZONE_RADIUS .equ #40
 FIRE_STRIP_WIDTH .equ #16
+FIRE_DIAG_STRIP_WIDTH .equ #16
 FIRE_FLANK_WIDTH .equ #48
 SCATTER_AREA_SIZE .equ #25
 
@@ -128,12 +129,21 @@ ai_melee_approach: ; a0
   ; move towards the nearest corner of the MELEE_ZONE
   ; level 3 and up, will walk 1 axis if in FIRE_DANGER
   
+  LDA player_floor
+  CMP #3
+  BCC +not_that_smart_yet
+    JSR ai_is_in_diag_fire_zone
+    LDA returns+0
+    STA generic_bytes+15
+  +not_that_smart_yet:
   ; call ai_get_direction to figure out which corner to go to
   call4 ai_get_direction, _actor_adj_x, _actor_adj_y, player+ACT_X, player+ACT_Y
-  
   LDA returns+0
+  
   AND DOWN_BUTTON
-  BEQ +player_is_up
+  BNE +
+    JMP +player_is_up
+  +:
     
     LDA returns+0
     AND LEFT_BUTTON
@@ -155,6 +165,17 @@ ai_melee_approach: ; a0
       LDA returns+0
       STA actor_control
       
+      ; if the actor is trying to get out of diag fire, mask out one direction
+      LDA generic_bytes+15
+      BNE +
+        JMP +state_shifts
+      +:
+      
+      LDA LEFT_BUTTON
+      EOR #$FF
+      AND actor_control
+      STA actor_control
+      
       JMP +state_shifts
     +player_is_right:
     
@@ -172,6 +193,17 @@ ai_melee_approach: ; a0
       call4 ai_get_direction, _actor_adj_x, _actor_adj_y, _target_x, _target_y
       
       LDA returns+0
+      STA actor_control
+      
+      ; if the actor is trying to get out of diag fire, mask out one direction
+      LDA generic_bytes+15
+      BNE +
+        JMP +state_shifts
+      +:
+      
+      LDA DOWN_BUTTON
+      EOR #$FF
+      AND actor_control
       STA actor_control
     
       JMP +state_shifts
@@ -196,6 +228,15 @@ ai_melee_approach: ; a0
       
       LDA returns+0
       STA actor_control
+      
+      ; if the actor is trying to get out of diag fire, mask out one direction
+      LDA generic_bytes+15
+      BEQ +state_shifts
+      
+      LDA UP_BUTTON
+      EOR #$FF
+      AND actor_control
+      STA actor_control
     
       JMP +state_shifts
     +player_is_right:
@@ -214,6 +255,15 @@ ai_melee_approach: ; a0
       call4 ai_get_direction, _actor_adj_x, _actor_adj_y, _target_x, _target_y
       
       LDA returns+0
+      STA actor_control
+      
+      ; if the actor is trying to get out of diag fire, mask out one direction
+      LDA generic_bytes+15
+      BEQ +state_shifts
+      
+      LDA RIGHT_BUTTON
+      EOR #$FF
+      AND actor_control
       STA actor_control
     
   
@@ -320,7 +370,10 @@ ai_flee_melee_attack: ; s3
   JSR ai_melee_attack
   RTS
 
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;  
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+_computed_x .equ generic_bytes+23
+_computed_y .equ generic_bytes+24
 
 ai_is_in_melee_zone:
   LDA player+ACT_X
@@ -362,6 +415,35 @@ ai_is_in_fire_zone:
   RTS
   
 ai_is_in_diag_fire_zone:
+  LDA #0
+  STA returns+0
+
+  LDX actor_data_pointer
+
+  LDA player+ACT_X
+  SEC
+  SBC actors+ACT_X,X
+  STA _computed_x
+  
+  LDA player+ACT_Y
+  SEC
+  SBC actors+ACT_Y,X
+  STA _computed_y
+  
+  CLC
+  ADC FIRE_DIAG_STRIP_WIDTH
+  CMP _computed_x
+  BCC +no
+  
+  LDA _computed_x
+  ADC FIRE_DIAG_STRIP_WIDTH
+  CMP _computed_y
+  BCC +no
+  
+  LDA #1
+  STA returns+0
+  
+  +no:
   RTS
   
 ai_is_in_fire_flank:
@@ -370,6 +452,15 @@ ai_is_in_fire_flank:
 ai_is_in_diag_fire_flank:
   RTS
   
+ai_in_danger_of_diag_fire:
+  LDA player+ACT_MANA
+  BEQ +no
+  
+  JSR ai_is_in_diag_fire_zone
+  
+  +no:
+  RTS
+
 ai_in_danger_of_fire:
   RTS
   
