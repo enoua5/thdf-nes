@@ -93,9 +93,9 @@ indv_actor_tick: ; I'm sorry for my inconsistant naming conventions
                  ; (not sorry enough to do something about it though)
   LDX actor_data_pointer
   
+  move_actor
   swing_sword
   shoot_fire
-  move_actor
   move_and_check_fire_hit
   check_sword_hit
   test_pause
@@ -314,9 +314,12 @@ spawn_actor:
   LDA #$ff
   STA actors+ACT_FIRE_Y,X
   
+  JSR set_default_corner
   
   LDA #0
   STA actors+ACT_ATTKTIME,X
+  STA actors+ACT_SWORD_DATA,X
+  STA actors+ACT_FIRE_DATA,X
   STA actors+ACT_ANIM_TIMER,X
   STA actors+ACT_FACE,X
   STA actors+ACT_FIRE_FACE,X
@@ -326,6 +329,8 @@ spawn_actor:
   STA actors+ACT_FIRE_ANIM_TIMER,X
   STA actors+ACT_READOUT_TIMER,X
   STA actors+ACT_READOUT_VALUE,X
+  STA actors+ACT_AI_STATE,X
+  STA actors+ACT_AI_GENERIC_BYTE,X
   
   RTS
   

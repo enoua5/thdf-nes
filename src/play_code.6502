@@ -58,8 +58,7 @@ check_room_move:
     CLC
     DEC player_room
     
-    LDA #1
-    STA room_update_req
+    JSR entered_room
   +:
   
   LDA actors+ACT_X
@@ -71,8 +70,7 @@ check_room_move:
     CLC
     INC player_room
     
-    LDA #1
-    STA room_update_req
+    JSR entered_room
   +:
   
   LDA actors+ACT_Y
@@ -86,8 +84,7 @@ check_room_move:
     ADC #$10
     STA player_room
     
-    LDA #1
-    STA room_update_req
+    JSR entered_room
   +:
   
   LDA actors+ACT_Y
@@ -101,13 +98,24 @@ check_room_move:
     SBC #$10
     STA player_room
     
-    LDA #1
-    STA room_update_req
+    JSR entered_room
   +:
   
   
   RTS
   
+entered_room:
+  LDA #1
+  STA room_update_req
+  
+  LDA #0
+  STA ai_state_msb
+  
+  LDA #$80
+  STA ai_state_timer
+  
+  RTS
+
 inc_ai_timers:
   
     LDA ai_state_timer
