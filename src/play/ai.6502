@@ -2,7 +2,7 @@ MELEE_ZONE_RADIUS .equ #20
 MELEE_EXT_ZONE_RADIUS .equ #40
 FIRE_STRIP_WIDTH .equ #16
 FIRE_DIAG_STRIP_WIDTH .equ #16
-FIRE_FLANK_WIDTH .equ #48
+FIRE_FLANK_WIDTH .equ #40
 SCATTER_AREA_SIZE .equ #25
 
 _actor_adj_x .equ generic_bytes+18
@@ -378,9 +378,29 @@ ai_range_approach: ; a2
   
   ; state shifts:
   ; if in FIRE_FLANK, and player fireball not on field, and own fireball not on field, enter range attack
-
-  LDA B_BUTTON
-  STA actor_control
+  JSR ai_is_in_fire_flank
+  LDA returns
+  BEQ +exit
+  
+  LDA player_floor
+  CMP #3
+  BCC +
+    JSR ai_is_in_diag_fire_flank
+    LDA returns
+    BEQ +exit
+  +:
+  
+  LDA player+ACT_FIRE_DATA ; is 0 when fire is not active
+  BNE +exit
+  
+  LDX actor_data_pointer
+  LDA actors+ACT_FIRE_DATA,X ; ditto
+  BNE +exit
+  
+    LDA #3 ; ai_range_attack
+    STA actors+ACT_AI_STATE,X
+  
+  +exit:
   RTS
   
 ai_range_attack: ; a3
@@ -388,13 +408,13 @@ ai_range_attack: ; a3
   ; move towards fire zone
   ; face player
   ; if above conditions are met, fire
-  
+  LDA B_BUTTON
+  STA actor_control
   ; state shifts:
   ; if out of fireballs, enter melee approach
   ; if own fireball is on field, enter range approach
   
-  LDA #0
-  STA actor_control
+
   RTS
   
 ai_scatter: ; s0
@@ -716,9 +736,86 @@ ai_is_in_diag_fire_zone:
   RTS
   
 ai_is_in_fire_flank:
+  LDA #0
+  STA returns+0
+  
+  LDA player+ACT_X
+  CLC
+  ADC FIRE_FLANK_WIDTH/2
+  CMP _actor_adj_x
+  BCC + ; branch on actor right of right edge of fire zone
+    SEC
+    SBC FIRE_FLANK_WIDTH
+    CMP _actor_adj_x
+    BCC +yes
+  +:
+  
+  LDA player+ACT_Y
+  CLC
+  ADC FIRE_FLANK_WIDTH/2
+  CMP _actor_adj_y
+  BCC + ; branch on actor below bottom edge of fire zone
+    SEC
+    SBC FIRE_FLANK_WIDTH
+    CMP _actor_adj_y
+    BCC +yes
+  +:
+  
+  JMP +exit
+  +yes:
+    JSR ai_is_in_fire_zone
+    LDA returns
+    BEQ +
+      LDA #0
+      STA returns
+      JMP +exit
+    +:
+  
+    LDA #1
+    STA returns+0
+  +exit:
   RTS
 
 ai_is_in_diag_fire_flank:
+  LDA #0
+  STA returns+0
+
+  LDX actor_data_pointer
+
+  LDA player+ACT_X
+  SEC
+  SBC actors+ACT_X,X
+  STA _computed_x
+  
+  LDA player+ACT_Y
+  SEC
+  SBC actors+ACT_Y,X
+  STA _computed_y
+  
+  CLC
+  ADC FIRE_FLANK_WIDTH
+  CMP _computed_x
+  BCC +no
+  
+  LDA _computed_x
+  ADC FIRE_FLANK_WIDTH
+  CMP _computed_y
+  BCC +no
+  
+  ;LDA #1
+  ;STA returns+0
+  
+  JSR ai_is_in_diag_fire_zone
+  LDA returns
+  BEQ +
+    LDA #0
+    STA returns
+    JMP +no
+  +:
+    LDA #1
+    STA returns
+  
+  +no:
   RTS
   
 ai_in_danger_of_diag_fire:
