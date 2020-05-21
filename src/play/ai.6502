@@ -370,11 +370,121 @@ ai_melee_attack: ; a1
   
   +exit:
   RTS
-  
+
+_dX .equ generic_bytes+25
+_x_sign .equ generic_bytes+26
+_dY .equ generic_bytes+27
+_y_sign . equ generic_bytes+28
 ai_range_approach: ; a2
   ; actions:
   ; move towards nearest FIRE_FLANK
   ; if in danger of player fire, move perpendicular to fire
+  ; 25 26 27 28
+  
+  ; find the signed difference between positions
+  LDA _actor_adj_x
+  SEC
+  SBC player+ACT_X
+  STA _dX
+  LDA #0
+  SBC #0
+  STA _x_sign ; will be #$FF if player x > actor x
+  
+  LDA _actor_adj_y
+  SEC
+  SBC player+ACT_Y
+  STA _dY
+  LDA #0
+  SBC #0
+  STA _y_sign ; will be #$FF if player x > actor x
+  
+  ; take the absolute values, but keep the sign bytes as flags
+  LDA _x_sign
+  BEQ +
+    LDA _dX
+    EOR #$FF
+    CLC
+    ADC #1
+    STA _dX
+  +:
+  
+  LDA _y_sign
+  BEQ +
+    LDA _dY
+    EOR #$FF
+    CLC
+    ADC #1
+    STA _dY
+  +:
+ 
+  ; find the minor axis
+  
+  LDA _dX
+  CMP _dY
+  BCC +
+    ; the minor axis is Y
+    LDA DOWN_BUTTON
+    STA actor_control
+    
+    LDA _y_sign
+    BEQ +++
+      JMP ++
+    +++:
+   
+      ; player is up
+      LDA actor_control
+      ASL
+      STA actor_control ; changes it to up
+      
+      
+      JMP ++
+  +:
+    ; the minor axis is X
+    LDA RIGHT_BUTTON
+    STA actor_control
+    
+    LDA _x_sign
+    BEQ +++
+      JMP ++
+    +++:
+    
+      ; player is to the left
+      LDA actor_control
+      ASL
+      STA actor_control ; changes it to left
+      
+  ++:
+  
+  ; direction flips depending on the return of this function
+  JSR ai_is_in_fire_flank
+  LDA returns
+  BEQ +
+    LDA actor_control
+    CMP #1
+    BNE ++
+      LDA #2
+      STA actor_control
+      JMP +
+    ++:
+    CMP #2
+    BNE ++
+      LDA #1
+      STA actor_control
+      JMP +
+    ++:
+    CMP #4
+    BNE ++
+      LDA #8
+      STA actor_control
+      JMP +
+    ++:
+    CMP #8
+    BNE ++
+      LDA #4
+      STA actor_control
+      JMP +
+    ++:
+  +:
   
   ; state shifts:
   ; if in FIRE_FLANK, and player fireball not on field, and own fireball not on field, enter range attack
