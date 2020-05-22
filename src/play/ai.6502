@@ -379,7 +379,27 @@ ai_range_approach: ; a2
   ; actions:
   ; move towards nearest FIRE_FLANK
   ; if in danger of player fire, move perpendicular to fire
-  ; 25 26 27 28
+  
+  ; check to see if the actor is already in the flank. if so, they don't need to move
+  JSR ai_is_in_fire_flank
+  LDA returns
+  BEQ +
+    LDA #0
+    STA actor_control
+    JMP +state_change
+  +:
+  
+  LDA player_floor
+  CMP #3
+  BCC +
+    JSR ai_is_in_diag_fire_flank
+    LDA returns
+    BEQ ++
+      LDA #0
+      STA actor_control
+      JMP +state_change
+    ++:
+  +:
   
   ; find the signed difference between positions
   LDA _actor_adj_x
@@ -488,6 +508,8 @@ ai_range_approach: ; a2
   
   ; state shifts:
   ; if in FIRE_FLANK, and player fireball not on field, and own fireball not on field, enter range attack
+  +state_change:
+  
   JSR ai_is_in_fire_flank
   LDA returns
   BEQ +exit
@@ -509,6 +531,8 @@ ai_range_approach: ; a2
   
     LDA #3 ; ai_range_attack
     STA actors+ACT_AI_STATE,X
+    LDA #0
+    STA actors+ACT_AI_GENERIC_BYTE,X ; will be used as a timer
   
   +exit:
   RTS
@@ -518,13 +542,40 @@ ai_range_attack: ; a3
   ; move towards fire zone
   ; face player
   ; if above conditions are met, fire
-  LDA B_BUTTON
+  call4 ai_get_direction, _actor_adj_x, _actor_adj_y, player+ACT_X, player+ACT_Y
+  LDA returns
   STA actor_control
+  
+  LDX actor_data_pointer
+  INC actors+ACT_AI_GENERIC_BYTE,X
+  LDA actors+ACT_AI_GENERIC_BYTE,X
+  CMP #24 ; walk for a few frames before attacking
+         ; I'm lazy and this is easier for both me and the NES.
+  BNE +
+    LDA actor_control
+    ORA B_BUTTON
+    STA actor_control
+  +:
+  
   ; state shifts:
   ; if out of fireballs, enter melee approach
-  ; if own fireball is on field, enter range approach
+  ; if own fireball is on field, enter ~~range~~ melee approach
+  LDX actor_data_pointer
+  LDA actors+ACT_MANA,X
+  BNE +
   
-
+    LDA #0
+    STA actors+ACT_AI_STATE,X
+    JMP +exit
+    
+  +:
+  LDA actors+ACT_FIRE_DATA,X
+  BEQ +exit
+  
+    LDA #0 ; a0 -> melee approach
+    STA actors+ACT_AI_STATE,X
+  
+  +exit:
   RTS
   
 ai_scatter: ; s0
