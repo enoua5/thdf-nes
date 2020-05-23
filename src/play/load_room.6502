@@ -482,7 +482,7 @@ draw_spirit:
     ; get offering amount and cost
     JSR rng
     LDA rng_seed
-    STA offerings+1 ; cost is not rolled with disadv
+    STA offerings+1
     
     AND #$0f ; 0-15. will be interpreted as 1-16
     STA generic_bytes+103
@@ -499,7 +499,7 @@ draw_spirit:
     
     ;insert amount into offer
     LDA offerings+1
-    AND #$f0
+    AND #$0f
     ORA generic_bytes+103
     
     STA offerings+1

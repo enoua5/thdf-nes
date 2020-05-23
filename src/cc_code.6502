@@ -206,11 +206,11 @@ cc_draw_screen:
   
 fill_stats:
   fill_ind_stats player, cc_hp_sel
-  fill_ind_stats warrior, enemy_starting_stats
-  fill_ind_stats theif, enemy_starting_stats+5
-  fill_ind_stats mage, enemy_starting_stats+10
-  fill_ind_stats tank, enemy_starting_stats+15
-  fill_ind_stats dragon, enemy_starting_stats+20
+  fill_ind_stats_nerfed warrior, enemy_starting_stats
+  fill_ind_stats_nerfed theif, enemy_starting_stats+5
+  fill_ind_stats_nerfed mage, enemy_starting_stats+10
+  fill_ind_stats_nerfed tank, enemy_starting_stats+15
+  fill_ind_stats_nerfed dragon, enemy_starting_stats+20
   ;set player's hp and mana to max
   LDA player+ACT_HPMAX
   STA player+ACT_HP

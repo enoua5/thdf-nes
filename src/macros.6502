@@ -132,6 +132,46 @@ MACRO fill_ind_stats dest, source
   STA dest, X
 ENDM
 
+MACRO fill_ind_stats_nerfed dest, source
+  LDX #$00
+  
+  ;hp
+  LDY source, X
+  LDA cc_stat_options, Y
+  LSR 
+  LSR ; quarter the staring health
+  STA dest, X
+  INX
+  
+  ;mana
+  LDY source, X
+  LDA cc_stat_options+4, Y
+  STA dest, X
+  INX
+  
+  ;str
+  LDY source, X
+  LDA cc_stat_options+8, Y
+  LSR ; quarter the starting strength
+  LSR
+  CLC
+  ADC #1 ; but add 1 so we don't get 0
+  STA dest, X
+  INX
+  
+  ;agl
+  LDY source, X
+  LDA cc_stat_options+12, Y
+  LSR ; half the starting agl
+  STA dest, X
+  INX
+  
+  ;def
+  LDY source, X
+  LDA cc_stat_options+16, Y
+  LSR ; half the starting def
+  STA dest, X
+ENDM
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ; GAMEPLAY
