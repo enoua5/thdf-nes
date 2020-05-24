@@ -163,8 +163,18 @@ gen_dungeon:
     CPX player_room
   BEQ -
   STX boss_room
-  LDA #%00000001
-  STA dungeon_map, X
+  
+  ;LDA player_floor
+  ;CMP HARD_SPIKE_FLOOR
+  ;BCS +
+    LDA #%00000001
+    STA dungeon_map, X
+  ;  JMP ++
+  ;+:
+  ;  LDA dungeon_map, X
+  ;  AND #%11110001 ; allow enemies
+  ;  STA dungeon_map, X
+  ;++:
   
   LDA #1
   STA boss_alive

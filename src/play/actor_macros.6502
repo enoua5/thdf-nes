@@ -662,6 +662,12 @@ MACRO swing_sword
     ORA #%10000000 ; mark attack as active
     STA actors+ACT_SWORD_DATA,X
     
+    ; if it's an enemy, make it so they can't hit other enemies
+    CPX #0 ; player is index 0
+    BEQ +
+      ORA #%00111110
+      STA actors+ACT_SWORD_DATA,X
+    +:
     
   +already_attacking:
   ;decrement attack time

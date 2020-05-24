@@ -544,7 +544,6 @@ draw_fountain:
   LDA boss_alive
   BNE +
     LDY #$40 ; first tile of stair
-  
   +:
   
   STY generic_bytes+0

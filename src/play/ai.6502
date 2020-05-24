@@ -390,7 +390,7 @@ ai_range_approach: ; a2
   +:
   
   LDA player_floor
-  CMP #3
+  CMP HARD_SPIKE_FLOOR
   BCC +
     JSR ai_is_in_diag_fire_flank
     LDA returns
@@ -510,17 +510,17 @@ ai_range_approach: ; a2
   ; if in FIRE_FLANK, and player fireball not on field, and own fireball not on field, enter range attack
   +state_change:
   
-  JSR ai_is_in_fire_flank
-  LDA returns
-  BEQ +exit
+  ;JSR ai_is_in_fire_flank
+  ;LDA returns
+  ;BEQ +exit
   
-  LDA player_floor
-  CMP #3
-  BCC +
-    JSR ai_is_in_diag_fire_flank
-    LDA returns
-    BEQ +exit
-  +:
+  ;LDA player_floor
+  ;CMP HARD_SPIKE_FLOOR
+  ;BCC +
+  ;  JSR ai_is_in_diag_fire_flank
+  ;  LDA returns
+  ;  BEQ +exit
+  ;+:
   
   LDA player+ACT_FIRE_DATA ; is 0 when fire is not active
   BNE +exit
@@ -984,7 +984,7 @@ ai_in_danger_of_diag_fire:
   BEQ +no
   
   LDA player_floor
-  CMP #3
+  CMP HARD_SPIKE_FLOOR
   BCC +no ; they get smart to diag fire shots on floor 3
   
   JSR ai_is_in_diag_fire_zone

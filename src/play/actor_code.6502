@@ -402,12 +402,12 @@ MACRO increase_stat _stat
     STA generic_bytes+128
   +:
   
-  
+  ; if the player is 3rd level or more, all enemies can learn magic
   LDX _subrout_actor_data_pointer
   LDA actors+_stat,X
   BNE +
     LDA player_floor
-    CMP #3
+    CMP HARD_SPIKE_FLOOR
     BCS +
       LDA #0
       STA  generic_bytes+128
