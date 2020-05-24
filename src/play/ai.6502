@@ -132,7 +132,7 @@ ai_melee_approach: ; a0
   JSR ai_in_danger_of_diag_fire
   STA generic_bytes+15
   ; call ai_get_direction to figure out which corner to go to
-  call4 ai_get_direction, _actor_adj_x, _actor_adj_y, player+ACT_X, player+ACT_Y
+  call4 ai_get_direction, _actor_adj_x, _actor_adj_y, delayed_px, delayed_py
   LDA returns+0
   
   AND DOWN_BUTTON
@@ -145,12 +145,12 @@ ai_melee_approach: ; a0
     BEQ +player_is_right
       
       ; player is down left, target opposite
-      LDA player+ACT_X
+      LDA delayed_px
       CLC
       ADC MELEE_ZONE_RADIUS-8
       STA _target_x
       
-      LDA player+ACT_Y
+      LDA delayed_py
       SEC
       SBC MELEE_ZONE_RADIUS-2
       STA _target_y
@@ -175,12 +175,12 @@ ai_melee_approach: ; a0
     +player_is_right:
     
       ; player is down right, target opposite
-      LDA player+ACT_X
+      LDA delayed_px
       SEC
       SBC MELEE_ZONE_RADIUS-2
       STA _target_x
       
-      LDA player+ACT_Y
+      LDA delayed_py
       SEC
       SBC MELEE_ZONE_RADIUS-2
       STA _target_y
@@ -209,12 +209,12 @@ ai_melee_approach: ; a0
     BEQ +player_is_right
     
       ; player is up left, target opposite
-      LDA player+ACT_X
+      LDA delayed_px
       CLC
       ADC MELEE_ZONE_RADIUS-8
       STA _target_x
       
-      LDA player+ACT_Y
+      LDA delayed_py
       CLC
       ADC MELEE_ZONE_RADIUS-2
       STA _target_y
@@ -237,12 +237,12 @@ ai_melee_approach: ; a0
     +player_is_right:
     
       ; player is up right, target opposite
-      LDA player+ACT_X
+      LDA delayed_px
       CLC
       SBC MELEE_ZONE_RADIUS-2
       STA _target_x
       
-      LDA player+ACT_Y
+      LDA delayed_py
       CLC
       ADC MELEE_ZONE_RADIUS-2
       STA _target_y
@@ -311,15 +311,15 @@ ai_melee_attack: ; a1
   ; if above conditions are met, swing
   LDA actors+ACT_X,X
   STA _target_x
-  CMP player+ACT_X
+  CMP delayed_px
   BEQ +in_line
   
   LDA actors+ACT_Y,X
   STA _target_y
-  CMP player+ACT_Y
+  CMP delayed_py
   BEQ +in_line
   
-  call4 ai_get_direction, _target_x, _target_y, player+ACT_X, player+ACT_Y
+  call4 ai_get_direction, _target_x, _target_y, delayed_px, delayed_py
   LDA returns+0
   STA actor_control
   
@@ -344,7 +344,7 @@ ai_melee_attack: ; a1
   JMP +state_shifts
   +in_line:
   
-  call4 ai_get_direction, _target_x, _target_y, player+ACT_X, player+ACT_Y
+  call4 ai_get_direction, _target_x, _target_y, delayed_px, delayed_py
   LDA returns+0
   ORA A_BUTTON
   STA actor_control ; face and attack
@@ -404,7 +404,7 @@ ai_range_approach: ; a2
   ; find the signed difference between positions
   LDA _actor_adj_x
   SEC
-  SBC player+ACT_X
+  SBC delayed_px
   STA _dX
   LDA #0
   SBC #0
@@ -412,7 +412,7 @@ ai_range_approach: ; a2
   
   LDA _actor_adj_y
   SEC
-  SBC player+ACT_Y
+  SBC delayed_py
   STA _dY
   LDA #0
   SBC #0
@@ -542,7 +542,7 @@ ai_range_attack: ; a3
   ; move towards fire zone
   ; face player
   ; if above conditions are met, fire
-  call4 ai_get_direction, _actor_adj_x, _actor_adj_y, player+ACT_X, player+ACT_Y
+  call4 ai_get_direction, _actor_adj_x, _actor_adj_y, delayed_px, delayed_py
   LDA returns
   STA actor_control
   
@@ -762,25 +762,25 @@ _computed_x .equ generic_bytes+23
 _computed_y .equ generic_bytes+24
 
 ai_is_in_melee_zone:
-  LDA player+ACT_X
+  LDA delayed_px
   SEC
   SBC MELEE_ZONE_RADIUS
   CMP _actor_adj_x
   BCS +not_in_zone
   
-  LDA player+ACT_X
+  LDA delayed_px
   CLC
   ADC MELEE_ZONE_RADIUS
   CMP _actor_adj_x
   BCC +not_in_zone
   
-  LDA player+ACT_Y
+  LDA delayed_py
   SEC
   SBC MELEE_ZONE_RADIUS
   CMP _actor_adj_y
   BCS +not_in_zone
   
-  LDA player+ACT_Y
+  LDA delayed_py
   CLC
   ADC MELEE_ZONE_RADIUS
   CMP _actor_adj_y
@@ -797,25 +797,25 @@ ai_is_in_melee_zone:
   RTS
   
 ai_is_in_ext_melee_zone:
-  LDA player+ACT_X
+  LDA delayed_px
   SEC
   SBC MELEE_EXT_ZONE_RADIUS
   CMP _actor_adj_x
   BCS +not_in_zone
   
-  LDA player+ACT_X
+  LDA delayed_px
   CLC
   ADC MELEE_EXT_ZONE_RADIUS
   CMP _actor_adj_x
   BCC +not_in_zone
   
-  LDA player+ACT_Y
+  LDA delayed_py
   SEC
   SBC MELEE_EXT_ZONE_RADIUS
   CMP _actor_adj_y
   BCS +not_in_zone
   
-  LDA player+ACT_Y
+  LDA delayed_py
   CLC
   ADC MELEE_EXT_ZONE_RADIUS
   CMP _actor_adj_y
@@ -835,7 +835,7 @@ ai_is_in_fire_zone:
   LDA #0
   STA returns+0
   
-  LDA player+ACT_X
+  LDA delayed_px
   CLC
   ADC FIRE_STRIP_WIDTH/2
   CMP _actor_adj_x
@@ -846,7 +846,7 @@ ai_is_in_fire_zone:
     BCC +yes
   +:
   
-  LDA player+ACT_Y
+  LDA delayed_py
   CLC
   ADC FIRE_STRIP_WIDTH/2
   CMP _actor_adj_y
@@ -870,12 +870,12 @@ ai_is_in_diag_fire_zone:
 
   LDX actor_data_pointer
 
-  LDA player+ACT_X
+  LDA delayed_px
   SEC
   SBC actors+ACT_X,X
   STA _computed_x
   
-  LDA player+ACT_Y
+  LDA delayed_py
   SEC
   SBC actors+ACT_Y,X
   STA _computed_y
@@ -900,7 +900,7 @@ ai_is_in_fire_flank:
   LDA #0
   STA returns+0
   
-  LDA player+ACT_X
+  LDA delayed_px
   CLC
   ADC FIRE_FLANK_WIDTH/2
   CMP _actor_adj_x
@@ -911,7 +911,7 @@ ai_is_in_fire_flank:
     BCC +yes
   +:
   
-  LDA player+ACT_Y
+  LDA delayed_py
   CLC
   ADC FIRE_FLANK_WIDTH/2
   CMP _actor_adj_y
@@ -943,12 +943,12 @@ ai_is_in_diag_fire_flank:
 
   LDX actor_data_pointer
 
-  LDA player+ACT_X
+  LDA delayed_px
   SEC
   SBC actors+ACT_X,X
   STA _computed_x
   
-  LDA player+ACT_Y
+  LDA delayed_py
   SEC
   SBC actors+ACT_Y,X
   STA _computed_y

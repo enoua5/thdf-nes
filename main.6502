@@ -43,23 +43,14 @@ MODE_DEATH = 3
   .enum $0400
     dungeon_map .dsb 256
   .ende
-  
-  .enum $0500 ; character creation vars
-    cc_points_spent .dsb 1
-    cc_cursor_x .dsb 1
-    cc_cursor_y .dsb 1
-    
-    ;terrible code *requires* you do not reorder this block
-    cc_hp_sel .dsb 1
-    cc_mp_sel .dsb 1
-    cc_str_sel .dsb 1
-    cc_atk_sel .dsb 1
-    cc_def_sel .dsb 1
-    
-    cc_cursor_flash_timer .dsb 1
-    
-    dun_gen .dsb 1 ; 0=not generated, 1=gen in process, 2=gen complete
-    gen_working_room .dsb 1
+
+ENEMY_REACTION_TIME .equ 16
+
+  .enum $0500
+    delayed_px .dsb 0
+    past_px .dsb ENEMY_REACTION_TIME
+    delayed_py .dsb 0
+    past_py .dsb ENEMY_REACTION_TIME
   .ende
   
   .enum $0600 ; playtime vars
@@ -119,6 +110,26 @@ MODE_DEATH = 3
     
     ai_state_timer .dsb 1
     ai_state_msb .dsb 1
+    
+    
+    ; character creation vars
+    
+    
+    cc_points_spent .dsb 1
+    cc_cursor_x .dsb 1
+    cc_cursor_y .dsb 1
+    
+    ;terrible code *requires* you do not reorder this block
+    cc_hp_sel .dsb 1
+    cc_mp_sel .dsb 1
+    cc_str_sel .dsb 1
+    cc_atk_sel .dsb 1
+    cc_def_sel .dsb 1
+    
+    cc_cursor_flash_timer .dsb 1
+    
+    dun_gen .dsb 1 ; 0=not generated, 1=gen in process, 2=gen complete
+    gen_working_room .dsb 1
                      
   .ende
   

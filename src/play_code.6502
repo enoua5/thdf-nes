@@ -28,6 +28,7 @@ play_code:
     
     JSR check_room_move
     
+    JSR rot_pos_delay
     
     make_offer ; idk why I wrote this one as a macro.
     JMP ++
@@ -153,3 +154,24 @@ inc_ai_timers:
       STA dragon+ACT_AI_STATE
     ++:
     RTS
+    
+rot_pos_delay:
+  LDX #0
+  
+  -:
+    LDA past_px+1, X
+    STA past_px, X
+    
+    LDA past_py+1, X
+    STA past_py, X
+    
+    INX
+    CPX #ENEMY_REACTION_TIME-1
+  BNE -
+  
+  LDA player+ACT_X
+  STA past_px+ENEMY_REACTION_TIME-1
+  LDA player+ACT_Y
+  STA past_py+ENEMY_REACTION_TIME-1
+  
+  RTS

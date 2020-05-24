@@ -28,6 +28,7 @@ draw_room:
     CMP #1
     BNE +
       JSR fill_walls
+      JSR reset_pos_delay
       JSR fill_enemy_stats
       
       INC room_update_req
@@ -136,7 +137,21 @@ fill_enemy_stats:
   BNE -
   
   RTS
+reset_pos_delay:
+  LDX #0
   
+  -:
+    LDA player+ACT_X
+    STA past_px, X
+    LDA player+ACT_Y
+    STA past_py, X
+    
+    INX
+    CPX #ENEMY_REACTION_TIME
+  BNE -
+  
+  RTS
+
 fill_walls:
   ; check upward
   LDY #$37 ;default fill (floor)
