@@ -1,4 +1,3 @@
-;PXZKPG
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ; constants
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -13,6 +12,9 @@ MODE_DEATH = 3
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ; vars
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+HARD_SPIKE_FLOOR .equ #2
+KONAMI_LENGTH .equ #10
 
   .enum $0000 ; engine vars
     waiting_for_frame .dsb 1
@@ -130,6 +132,10 @@ ENEMY_REACTION_TIME .equ 16
     
     dun_gen .dsb 1 ; 0=not generated, 1=gen in process, 2=gen complete
     gen_working_room .dsb 1
+    
+    
+    cheat_progress .dsb 1
+    max_cc_points .dsb 1
                      
   .ende
   
@@ -353,6 +359,19 @@ enemy_starting_stats:
   
 sprite_data:
   .incbin "dat/sprite_data.dat"
+  
+konami:
+  .db UP_BUTTON
+  .db UP_BUTTON
+  .db DOWN_BUTTON
+  .db DOWN_BUTTON
+  .db LEFT_BUTTON
+  .db RIGHT_BUTTON
+  .db LEFT_BUTTON
+  .db RIGHT_BUTTON
+  .db B_BUTTON
+  .db A_BUTTON
+  .db 0
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ; interupt vectors

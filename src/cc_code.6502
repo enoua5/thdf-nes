@@ -177,8 +177,9 @@ cc_move_cursor:
   
   
   ;;if too many points are spent, move current cursor back
-  CMP #6
-  BMI +
+  CMP max_cc_points
+  BCC +
+  BEQ +
     DEC cc_cursor_x
     JMP --
   +:
@@ -201,6 +202,10 @@ cc_move_cursor:
 cc_draw_screen:
   begin_nt_buffer_write #$26, #$08
   write_to_nt_buffer cc_points_spent
+  JSR _end_nt_buffer_write
+  
+  begin_nt_buffer_write #$26, #$0a
+  write_to_nt_buffer max_cc_points
   JSR _end_nt_buffer_write
   RTS
   
