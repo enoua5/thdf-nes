@@ -26,19 +26,31 @@ ENDM
 
 MACRO load_pal pal_address
   ;load color pal
-  LDA $2002 ; reset the hight/low latch to high
-  LDA #$3F
-  STA $2006 ; write high byte
-  LDA #$00
-  STA $2006 ; PPU is now looking at $3F10; the color palette data
+  ;LDA $2002 ; reset the hight/low latch to high
+  ;LDA #$3F
+  ;STA $2006 ; write high byte
+  ;LDA #$00
+  ;STA $2006 ; PPU is now looking at $3F10; the color palette data
     
-  LDX #$00
-  -:
-    LDA pal_address, x
-    STA $2007
-    INX
-    CPX #$20
+  ;LDX #$00
+  ;-:
+  ;  LDA pal_address, x
+  ;  STA $2007
+  ;  INX
+  ;  CPX #$20
+  ;  BNE -
+  
+  LDY #$00
+  begin_nt_buffer_write #$3F, #$00
+    -:
+      LDA pal_address,Y
+      STA nt_buf_in_dt
+      JSR _write_to_nt_buffer
+    
+    INY
+    CPY #$20
     BNE -
+  end_nt_buffer_write
 ENDM
 
 MACRO load_nametable nt_number, nt_pointer
@@ -120,6 +132,46 @@ MACRO fill_ind_stats dest, source
   STA dest, X
 ENDM
 
+MACRO fill_ind_stats_nerfed dest, source
+  LDX #$00
+  
+  ;hp
+  LDY source, X
+  LDA cc_stat_options, Y
+  LSR 
+  LSR ; quarter the staring health
+  STA dest, X
+  INX
+  
+  ;mana
+  LDY source, X
+  LDA cc_stat_options+4, Y
+  STA dest, X
+  INX
+  
+  ;str
+  LDY source, X
+  LDA cc_stat_options+8, Y
+  LSR ; quarter the starting strength
+  LSR
+  CLC
+  ADC #1 ; but add 1 so we don't get 0
+  STA dest, X
+  INX
+  
+  ;agl
+  LDY source, X
+  LDA cc_stat_options+12, Y
+  LSR ; half the starting agl
+  STA dest, X
+  INX
+  
+  ;def
+  LDY source, X
+  LDA cc_stat_options+16, Y
+  LSR ; half the starting def
+  STA dest, X
+ENDM
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ; GAMEPLAY
@@ -143,6 +195,13 @@ MACRO make_offer
   STA current_offer_amounts
   STA current_offer_type
   STA standing_on_stairs
+  
+  LDX player_room
+  LDA dungeon_map,X
+  AND #%11110000
+  BEQ +
+    JMP +no_offer
+  +:
     
   check_onChest
   BEQ +
@@ -171,7 +230,7 @@ MACRO make_offer
   
     JMP +offer_made
   +:
-  
+
   check_onStairs
   BEQ +
     LDA #1

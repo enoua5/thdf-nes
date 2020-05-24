@@ -1,4 +1,3 @@
-;PXZKPG
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ; constants
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -13,6 +12,9 @@ MODE_DEATH = 3
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ; vars
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+HARD_SPIKE_FLOOR .equ #2
+KONAMI_LENGTH .equ #10
 
   .enum $0000 ; engine vars
     waiting_for_frame .dsb 1
@@ -43,23 +45,14 @@ MODE_DEATH = 3
   .enum $0400
     dungeon_map .dsb 256
   .ende
-  
-  .enum $0500 ; character creation vars
-    cc_points_spent .dsb 1
-    cc_cursor_x .dsb 1
-    cc_cursor_y .dsb 1
-    
-    ;terrible code *requires* you do not reorder this block
-    cc_hp_sel .dsb 1
-    cc_mp_sel .dsb 1
-    cc_str_sel .dsb 1
-    cc_atk_sel .dsb 1
-    cc_def_sel .dsb 1
-    
-    cc_cursor_flash_timer .dsb 1
-    
-    dun_gen .dsb 1 ; 0=not generated, 1=gen in process, 2=gen complete
-    gen_working_room .dsb 1
+
+ENEMY_REACTION_TIME .equ 16
+
+  .enum $0500
+    delayed_px .dsb 0
+    past_px .dsb ENEMY_REACTION_TIME
+    delayed_py .dsb 0
+    past_py .dsb ENEMY_REACTION_TIME
   .ende
   
   .enum $0600 ; playtime vars
@@ -113,6 +106,36 @@ MODE_DEATH = 3
     standing_on_stairs .dsb 1
                               
     boss_alive .dsb 1
+    player_dead .dsb 1 ; doubles as death animation frame counter
+    death_curtain_pos .dsb 1
+    death_curtain_pos_msb .dsb 1
+    
+    ai_state_timer .dsb 1
+    ai_state_msb .dsb 1
+    
+    
+    ; character creation vars
+    
+    
+    cc_points_spent .dsb 1
+    cc_cursor_x .dsb 1
+    cc_cursor_y .dsb 1
+    
+    ;terrible code *requires* you do not reorder this block
+    cc_hp_sel .dsb 1
+    cc_mp_sel .dsb 1
+    cc_str_sel .dsb 1
+    cc_atk_sel .dsb 1
+    cc_def_sel .dsb 1
+    
+    cc_cursor_flash_timer .dsb 1
+    
+    dun_gen .dsb 1 ; 0=not generated, 1=gen in process, 2=gen complete
+    gen_working_room .dsb 1
+    
+    
+    cheat_progress .dsb 1
+    max_cc_points .dsb 1
                      
   .ende
   
@@ -320,6 +343,8 @@ IRQ:
   .org $E000
 colorpal1:
   .incbin "dat/pal.dat"
+colorpal2:
+  .incbin "dat/grey_pal.dat"
 titlescreen_name:
   .incbin "dat/title.nam"
 char_create_name:
@@ -334,6 +359,19 @@ enemy_starting_stats:
   
 sprite_data:
   .incbin "dat/sprite_data.dat"
+  
+konami:
+  .db UP_BUTTON
+  .db UP_BUTTON
+  .db DOWN_BUTTON
+  .db DOWN_BUTTON
+  .db LEFT_BUTTON
+  .db RIGHT_BUTTON
+  .db LEFT_BUTTON
+  .db RIGHT_BUTTON
+  .db B_BUTTON
+  .db A_BUTTON
+  .db 0
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ; interupt vectors

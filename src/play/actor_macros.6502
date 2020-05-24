@@ -1,3 +1,6 @@
+TOTAL_ATTACK_TIME .equ #$40
+ATTACK_COOLDOWN .equ #$20
+
 CHEST_LOCATION_X .equ #48
 CHEST_LOCATION_Y .equ #140
 ROOM_DATA_CHEST_BIT .equ #%00000010
@@ -124,8 +127,11 @@ MACRO move_actor
     
   +maybe_movement:
   LDA actors+ACT_ATTKTIME,X
-  BEQ +yes_movement ; if not attacking, can move
-    JMP +no_movement
+  ;BEQ +yes_movement ; if not attacking, can move
+  ;  JMP +no_movement
+  CMP ATTACK_COOLDOWN
+  BCC +yes_movement
+  JMP +no_movement
   
   +yes_movement:
     LDA actor_control
@@ -177,6 +183,14 @@ MACRO buy_stuff
   BNE +
     JMP +no_purchase
   +:
+  
+  LDX player_room
+  LDA dungeon_map,X
+  AND #%11110000
+  BEQ +
+    JMP +no_purchase
+  +:
+  LDX actor_data_pointer
   
   LDA standing_on_stairs
   BEQ +
@@ -621,7 +635,6 @@ MACRO test_pause
   +:
 ENDM
 
-TOTAL_ATTACK_TIME .equ #$40
 MACRO swing_sword
   LDA actors+ACT_ATTKTIME,X
   BNE +already_attacking
@@ -649,11 +662,19 @@ MACRO swing_sword
     ORA #%10000000 ; mark attack as active
     STA actors+ACT_SWORD_DATA,X
     
+    ; if it's an enemy, make it so they can't hit other enemies
+    CPX #0 ; player is index 0
+    BEQ +
+      ORA #%00111110
+      STA actors+ACT_SWORD_DATA,X
+    +:
     
   +already_attacking:
   ;decrement attack time
   DEC actors+ACT_ATTKTIME,X
-  BNE +end_of_swing_sword_macro
+  ;BNE +end_of_swing_sword_macro
+  CMP ATTACK_COOLDOWN
+  BCS +end_of_swing_sword_macro
   attack_over:
   
     ;attack is over
@@ -904,6 +925,9 @@ MACRO move_and_check_fire_hit
     CLC
     ADC actors+ACT_FIRE_YVEL,X
     STA actors+ACT_FIRE_Y,X
+    
+    CLC
+    INC actors+ACT_FIRE_ANIM_TIMER,X
     ; delete when off screen
     LDA actors+ACT_FIRE_Y,X
     CMP #8
@@ -927,7 +951,7 @@ MACRO move_and_check_fire_hit
       STA actors+ACT_FIRE_Y,X
     JMP +end_fire
     +do_not_delete_fire:
-    
+   
     check_hit ACT_FIRE_DATA, ACT_SPRITE_FIRE, 1
   
   +end_fire:

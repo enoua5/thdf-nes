@@ -9,7 +9,7 @@ setup_gen_dun:
     STA dungeon_map, x
     INX
     CPX #0
-  ;BNE -
+  BNE -
   
   LDY #0 ; counter for how many rooms to fill in
   JSR rng ; rng loads X. Be Careful.
@@ -23,6 +23,8 @@ gen_room_feats:
   AND #%11110000
   JSR rng ;less enemies
   AND rng_seed
+  JSR rng
+  AND rng_seed ; even less enemies
   
   LDX gen_working_room
   ORA dungeon_map, x 
@@ -148,7 +150,7 @@ gen_dungeon:
     +:
       JSR gen_pick_next_room
     INY
-    CPY #0
+    CPY #24;#0
   BNE next_room
   
   choose_random_room
@@ -161,8 +163,18 @@ gen_dungeon:
     CPX player_room
   BEQ -
   STX boss_room
-  LDA #%00000001
-  STA dungeon_map, X
+  
+  ;LDA player_floor
+  ;CMP HARD_SPIKE_FLOOR
+  ;BCS +
+    LDA #%00000001
+    STA dungeon_map, X
+  ;  JMP ++
+  ;+:
+  ;  LDA dungeon_map, X
+  ;  AND #%11110001 ; allow enemies
+  ;  STA dungeon_map, X
+  ;++:
   
   LDA #1
   STA boss_alive

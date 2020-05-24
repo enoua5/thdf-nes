@@ -1,4 +1,5 @@
 .incsrc "src/play/actor_macros.6502"
+.incsrc "src/play/ai.6502"
 
 ACT_SPRITE_HEAD  .equ 0
 ACT_SPRITE_BODY  .equ 4
@@ -88,20 +89,13 @@ actor_tick:
   
   RTS
 
-run_ai:
-  LDA #B_BUTTON
-  
-  AND #%11001111 ; AI can't press start or select
-  STA actor_control
-  RTS
-
 indv_actor_tick: ; I'm sorry for my inconsistant naming conventions
                  ; (not sorry enough to do something about it though)
   LDX actor_data_pointer
   
+  move_actor
   swing_sword
   shoot_fire
-  move_actor
   move_and_check_fire_hit
   check_sword_hit
   test_pause
@@ -292,6 +286,13 @@ do_actor_hit:
   AND _hit_bitmask
   STA dungeon_map,X
   
+  ; if the room is now empty of enemies, redraw the room
+  AND #%11110000
+  BNE +
+    LDA #1
+    STA room_update_req
+  +:
+  
   RTS
 
 spawn_actor:
@@ -313,9 +314,12 @@ spawn_actor:
   LDA #$ff
   STA actors+ACT_FIRE_Y,X
   
+  JSR set_default_corner
   
   LDA #0
   STA actors+ACT_ATTKTIME,X
+  STA actors+ACT_SWORD_DATA,X
+  STA actors+ACT_FIRE_DATA,X
   STA actors+ACT_ANIM_TIMER,X
   STA actors+ACT_FACE,X
   STA actors+ACT_FIRE_FACE,X
@@ -325,6 +329,8 @@ spawn_actor:
   STA actors+ACT_FIRE_ANIM_TIMER,X
   STA actors+ACT_READOUT_TIMER,X
   STA actors+ACT_READOUT_VALUE,X
+  STA actors+ACT_AI_STATE,X
+  STA actors+ACT_AI_GENERIC_BYTE,X
   
   RTS
   
@@ -376,12 +382,12 @@ level_up:
 MACRO increase_stat _stat
   JSR rng
   LDA rng_seed+0
-  AND #$0F
+  AND #$07
   STA generic_bytes+128
   
   JSR rng
   LDA rng_seed+0
-  AND #$0F
+  AND #$07
   
   CMP generic_bytes+128
   BCC +
@@ -396,12 +402,12 @@ MACRO increase_stat _stat
     STA generic_bytes+128
   +:
   
-  
+  ; if the player is 3rd level or more, all enemies can learn magic
   LDX _subrout_actor_data_pointer
   LDA actors+_stat,X
   BNE +
     LDA player_floor
-    CMP #3
+    CMP HARD_SPIKE_FLOOR
     BCS +
       LDA #0
       STA  generic_bytes+128
@@ -426,4 +432,137 @@ upgrade_enemy:
   RTS
 
 o_god_o_fuk:
+  LDA #1
+  STA player_dead
+  STA readout_update_req
+  RTS
+  
+deadify:
+  LDA player_dead
+  
+  CMP #120
+  BCS +
+    ; first two seconds
+    ; make player spin and screen flash
+    
+    AND #%00001100
+    CLC
+    LSR
+    LSR
+    STA actors+ACT_FACE
+    
+    LDA player_dead
+    AND #%00010000
+    BNE ++
+      JSR greyify
+      JMP +++
+    ++:
+      JSR ungreyify
+    +++:
+    
+    LDA #$20 ; starting place for curtain
+    STA death_curtain_pos_msb
+    
+    JMP +exit_deadify
+  +:
+  
+  ; next two seconds, close curtain
+  CMP #216
+  BCS +
+    AND #%00000011 ; only do the thing once ever 8 frames
+    BEQ ++
+      JMP +++
+    ++:
+    
+    
+      begin_nt_buffer_write death_curtain_pos_msb, death_curtain_pos
+        LDY #32
+        -:
+          write_to_nt_buffer #$24
+        SEC
+        DEY
+        BNE -
+        
+      end_nt_buffer_write
+    
+      LDA death_curtain_pos
+      CLC
+      ADC #$20
+      STA death_curtain_pos
+      
+      LDA death_curtain_pos_msb
+      ADC #0 ; adds carry
+      STA death_curtain_pos_msb
+      
+      
+    +++:
+    
+    
+    JMP +exit_deadify
+  +:
+  
+  CMP #217
+  BCC +
+    JMP ++
+  +
+    ; make things disappear
+    
+    LDA ppu_mask
+    AND #%11101111 ; disable sprite
+    STA ppu_mask
+    
+    begin_nt_buffer_write #$20, #$8A
+      write_to_nt_buffer #$10 ; G
+      write_to_nt_buffer #$0A ; A
+      write_to_nt_buffer #$16 ; M
+      write_to_nt_buffer #$0E ; E
+      write_to_nt_buffer #$24 ;  
+      write_to_nt_buffer #$24 ;  
+      write_to_nt_buffer #$18 ; O
+      write_to_nt_buffer #$1F ; V
+      write_to_nt_buffer #$0E ; E
+      write_to_nt_buffer #$1B ; R
+    end_nt_buffer_write
+    
+    begin_nt_buffer_write #$21, #$45
+      write_to_nt_buffer #$19 ; P
+      write_to_nt_buffer #$1B ; R
+      write_to_nt_buffer #$0E ; E
+      write_to_nt_buffer #$1C ; S
+      write_to_nt_buffer #$1C ; S
+      write_to_nt_buffer #$24 ;  
+      write_to_nt_buffer #$1C ; S
+      write_to_nt_buffer #$1D ; T
+      write_to_nt_buffer #$0A ; A
+      write_to_nt_buffer #$1B ; R
+      write_to_nt_buffer #$1D ; T
+      write_to_nt_buffer #$24 ;  
+      write_to_nt_buffer #$1D ; T
+      write_to_nt_buffer #$18 ; O
+      write_to_nt_buffer #$24 ;  
+      write_to_nt_buffer #$1B ; R
+      write_to_nt_buffer #$0E ; E
+      write_to_nt_buffer #$1D ; T
+      write_to_nt_buffer #$1B ; R
+      write_to_nt_buffer #$22 ; y
+    end_nt_buffer_write
+    
+    
+    JMP +exit_deadify
+  ++:
+  
+  ; check for reset 
+  
+  LDA button_ondown
+  AND START_BUTTON
+  
+  BEQ +
+    JMP Reset
+  +:
+  
+  JMP +exit_harder
+  
+  +exit_deadify:
+  INC player_dead
+  +exit_harder:
   RTS

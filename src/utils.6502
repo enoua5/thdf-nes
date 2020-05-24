@@ -228,3 +228,62 @@ modulo:
   STA returns+0
   
   RTS
+  
+greyify:
+  load_pal colorpal2
+  ;LDA ppu_mask
+  ;ORA #%00000001 ; grey-scale to indicate paused
+  ;STA ppu_mask
+  
+  RTS
+
+ungreyify:
+  load_pal colorpal1
+  ;LDA ppu_mask
+  ;AND #%11111110 ; undo grey-scale
+  ;STA ppu_mask
+  RTS
+  
+  
+  
+
+
+MACRO call4 function, arg0, arg1, arg2, arg3
+  LDA arg0
+  STA arguments+0
+  LDA arg1
+  STA arguments+1
+  LDA arg2
+  STA arguments+2
+  LDA arg3
+  STA arguments+3
+  
+  JSR function
+ENDM
+
+MACRO call3 function, arg0, arg1, arg2
+  LDA arg0
+  STA arguments+0
+  LDA arg1
+  STA arguments+1
+  LDA arg2
+  STA arguments+2
+  
+  JSR function
+ENDM
+
+MACRO call2 function, arg0, arg1
+  LDA arg0
+  STA arguments+0
+  LDA arg1
+  STA arguments+1
+  
+  JSR function
+ENDM
+
+MACRO call1 function, arg0
+  LDA arg0
+  STA arguments+0
+  
+  JSR function
+ENDM

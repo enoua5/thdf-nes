@@ -28,6 +28,7 @@ draw_room:
     CMP #1
     BNE +
       JSR fill_walls
+      JSR reset_pos_delay
       JSR fill_enemy_stats
       
       INC room_update_req
@@ -136,7 +137,21 @@ fill_enemy_stats:
   BNE -
   
   RTS
+reset_pos_delay:
+  LDX #0
   
+  -:
+    LDA player+ACT_X
+    STA past_px, X
+    LDA player+ACT_Y
+    STA past_py, X
+    
+    INX
+    CPX #ENEMY_REACTION_TIME
+  BNE -
+  
+  RTS
+
 fill_walls:
   ; check upward
   LDY #$37 ;default fill (floor)
@@ -352,8 +367,10 @@ draw_chest:
   LDX player_room
   LDA dungeon_map,X
   AND #%00000010
-  CMP #0
   BEQ ++
+  LDA dungeon_map,X
+  AND #%11110000
+  BNE ++
     LDY #$3C ;first tile of chest
     
     ; get money ammount
@@ -409,8 +426,10 @@ draw_spirit:
   LDX player_room
   LDA dungeon_map,X
   AND #%00000100
-  CMP #0
   BEQ +
+  LDA dungeon_map,X
+  AND #%11110000
+  BNE +
     LDY #$38 ;first tile of spirit
   +:
   
@@ -478,7 +497,7 @@ draw_spirit:
     ; get offering amount and cost
     JSR rng
     LDA rng_seed
-    STA offerings+1 ; cost is not rolled with disadv
+    STA offerings+1
     
     AND #$0f ; 0-15. will be interpreted as 1-16
     STA generic_bytes+103
@@ -495,7 +514,7 @@ draw_spirit:
     
     ;insert amount into offer
     LDA offerings+1
-    AND #$f0
+    AND #$0f
     ORA generic_bytes+103
     
     STA offerings+1
@@ -512,8 +531,10 @@ draw_fountain:
   LDX player_room
   LDA dungeon_map,X
   AND #%00001000
-  CMP #0
   BEQ +
+  LDA dungeon_map,X
+  AND #%11110000
+  BNE +
     LDY #$60 ;first tile of fountain
   +:
   
@@ -523,7 +544,6 @@ draw_fountain:
   LDA boss_alive
   BNE +
     LDY #$40 ; first tile of stair
-  
   +:
   
   STY generic_bytes+0

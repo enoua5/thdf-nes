@@ -6,6 +6,41 @@ title_code:
     STA game_mode
     LDA #2
     STA draw_req
+    
+    LDA #1
+    STA cc_hp_sel
+    STA cc_mp_sel
+    STA cc_str_sel
+    STA cc_atk_sel
+    STA cc_def_sel
+    STA cc_cursor_x
+    
+    LDA cheat_progress
+    CMP KONAMI_LENGTH
+    BEQ ++
+      LDA #5
+      STA max_cc_points
+      JMP +exit
+    ++:
+      LDA #$FF
+      STA max_cc_points
+      JMP +exit
   +:
   
+  ; check konami code
+  LDA button_ondown
+  BEQ +exit
+  
+    LDX cheat_progress
+    LDA konami,X
+  
+    CMP button_ondown
+    BNE +
+      CLC
+      INC cheat_progress
+      JMP +exit 
+    +:
+      LDA #0
+      STA cheat_progress
+  +exit:
   RTS
