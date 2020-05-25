@@ -258,6 +258,19 @@ MACRO buy_stuff
       SBC generic_bytes+88
       STA player_money
       
+      ; spirit has some chance of disappearing whenever you buy
+      JSR rng
+      LDA rng_seed
+      AND #%00000011
+      BNE +
+        LDX player_room
+        LDA dungeon_map, X
+        AND #%11111011 ; remove the spirit
+        STA dungeon_map, X
+        
+        JSR draw_spirit
+      +:
+      
       JMP +can_afford
       
     +costs_gems:
