@@ -499,12 +499,12 @@ draw_spirit:
     LDA rng_seed
     STA offerings+1
     
-    AND #$0f ; 0-15. will be interpreted as 1-16
+    AND #$f0 ; 0-15. will be interpreted as 1-16
     STA generic_bytes+103
     ; do it again, keep lower of the two values
     JSR rng
     LDA rng_seed+0
-    AND #$0f ; 0-15. will be interpreted as 1-16
+    AND #$f0 ; 0-15. will be interpreted as 1-16
     ; check which is lower
     CMP generic_bytes+103
     BCC +asdf
@@ -516,6 +516,7 @@ draw_spirit:
     LDA offerings+1
     AND #$0f
     ORA generic_bytes+103
+    AND #%11110111 ; not as much sold
     
     STA offerings+1
   +:
@@ -736,14 +737,14 @@ draw_fountain:
     ; get offering amount and cost
     JSR rng
     LDA rng_seed
-    STA offerings+2 ; cost is not rolled with disadv
+    STA offerings+2 ; cost is rolled with disadv
     
-    AND #$0f ; 0-15. will be interpreted as 1-16
+    AND #$f0 ; 0-15. will be interpreted as 1-16
     STA generic_bytes+103
     ; do it again, keep lower of the two values
     JSR rng
     LDA rng_seed+0
-    AND #$0f ; 0-15. will be interpreted as 1-16
+    AND #$f0 ; 0-15. will be interpreted as 1-16
     ; check which is lower
     CMP generic_bytes+103
     BCC +asdf
@@ -763,7 +764,7 @@ draw_fountain:
     
     ;insert amount into offer
     LDA offerings+2
-    AND #$f0
+    AND #$07
     ORA generic_bytes+103
     
     STA offerings+2
