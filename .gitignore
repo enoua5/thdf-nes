@@ -8,3 +8,5 @@ design_notes
 *.swp
 *.mp4
 *.deb
+sprites
+sprites/*
