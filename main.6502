@@ -226,7 +226,6 @@ Reset:
       INY
     BNE -
     
-    
   main:
     .incsrc "src/controller.6502"
     ; tick forward prng and xor with controller every frame for more entropy
