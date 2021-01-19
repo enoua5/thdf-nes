@@ -473,7 +473,13 @@ draw_spirit:
     STA rng_seed
     LDA player_room
     STA rng_seed+1
-    JSR rng ; run it once becuase I was noticing patterns
+    
+    LDA #$10
+    STA generic_bytes+29
+    -:
+      JSR rng ; run it a few times becuase I was noticing patterns
+      DEC generic_bytes+29
+    BNE -
   
     JSR rng
     LDA rng_seed
