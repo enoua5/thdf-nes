@@ -518,6 +518,16 @@ draw_spirit:
     +asdf:
     STA generic_bytes+103
     
+    LDA generic_bytes+2
+    BEQ ++ ; if offer type is gem
+           ; make it cheaper
+      LDA generic_bytes+103
+      LSR
+      LSR
+      AND #$f0
+      STA generic_bytes+103
+    ++:
+    
     ;insert amount into offer
     LDA offerings+1
     AND #$0f
