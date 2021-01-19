@@ -760,12 +760,14 @@ draw_fountain:
     
     ; max magic uses upgrades slower
     LDA generic_bytes+105
-    CMP #%00100000
+    CMP #%10000000
     BNE +aaaa
       LDA generic_bytes+103
       AND #%00000001
       STA generic_bytes+103
     +aaaa:
+    
+    
     
     
     ;insert amount into offer
