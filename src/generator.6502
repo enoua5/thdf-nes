@@ -30,6 +30,7 @@ gen_room_feats:
   ORA dungeon_map, x 
   STA dungeon_map, x
   
+  -try_again:
   ;fountain
   JSR rng
   AND #%00000111
@@ -60,6 +61,13 @@ gen_room_feats:
     ORA #%00000010
     STA dungeon_map, x
   +:
+  
+  ; make sure the room has treasure of some sort
+  LDX gen_working_room
+  LDA dungeon_map,x
+  AND #$0e
+  BEQ -try_again:
+  
   RTS
 gen_pick_next_room:      ;pick next room
   JSR rng
