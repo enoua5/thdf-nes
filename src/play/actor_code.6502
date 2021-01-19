@@ -382,12 +382,12 @@ level_up:
 MACRO increase_stat _stat
   JSR rng
   LDA rng_seed+0
-  AND #$07
+  AND #$05
   STA generic_bytes+128
   
   JSR rng
   LDA rng_seed+0
-  AND #$07
+  AND #$05
   
   CMP generic_bytes+128
   BCC +

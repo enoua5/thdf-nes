@@ -519,7 +519,7 @@ draw_spirit:
     STA generic_bytes+103
     
     LDA generic_bytes+2
-    BEQ ++ ; if offer type is gem
+    BNE ++ ; if offer type is gem
            ; make it cheaper
       LDA generic_bytes+103
       LSR
