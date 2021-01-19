@@ -139,6 +139,7 @@ ENEMY_REACTION_TIME .equ 16
                      
   .ende
   
+  ; this was a mistake and I sincerely apologize
   .enum $0700
     generic_bytes .dsb 255
   .ende

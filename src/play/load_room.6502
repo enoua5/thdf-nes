@@ -473,7 +473,13 @@ draw_spirit:
     STA rng_seed
     LDA player_room
     STA rng_seed+1
-    JSR rng ; run it once becuase I was noticing patterns
+    
+    LDA #$10
+    STA generic_bytes+29
+    -:
+      JSR rng ; run it a few times becuase I was noticing patterns
+      DEC generic_bytes+29
+    BNE -
   
     JSR rng
     LDA rng_seed
@@ -511,6 +517,16 @@ draw_spirit:
       LDA generic_bytes+103
     +asdf:
     STA generic_bytes+103
+    
+    LDA generic_bytes+2
+    BEQ ++ ; if offer type is gem
+           ; make it cheaper
+      LDA generic_bytes+103
+      LSR
+      LSR
+      AND #$f0
+      STA generic_bytes+103
+    ++:
     
     ;insert amount into offer
     LDA offerings+1
@@ -754,12 +770,14 @@ draw_fountain:
     
     ; max magic uses upgrades slower
     LDA generic_bytes+105
-    CMP #%00100000
+    CMP #%10000000
     BNE +aaaa
       LDA generic_bytes+103
       AND #%00000001
       STA generic_bytes+103
     +aaaa:
+    
+    
     
     
     ;insert amount into offer
